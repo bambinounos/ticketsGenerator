@@ -1,9 +1,19 @@
 from django.contrib import admin
-from .models import Customer, Raffle, Ticket, TicketTemplate
+from .models import Customer, Raffle, Ticket, TicketTemplate, SiteSettings
 
-admin.site.site_header = "Raffles Admin"
-admin.site.site_title = "Raffles Admin Portal"
-admin.site.index_title = "Welcome to Raffles Admin Portal"
+admin.site.site_header = "Administración de Rifas"
+admin.site.site_title = "Portal de Administración de Rifas"
+admin.site.index_title = "Bienvenido al Portal de Administración de Rifas"
+
+
+@admin.register(SiteSettings)
+class SiteSettingsAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return not SiteSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
 
 @admin.register(TicketTemplate)
 class TicketTemplateAdmin(admin.ModelAdmin):

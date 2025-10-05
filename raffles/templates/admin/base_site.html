@@ -2,5 +2,9 @@
 {% load static %}
 
 {% block extrahead %}{{ block.super }}
-    <link rel="shortcut icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    {% if site_settings and site_settings.favicon %}
+        <link rel="shortcut icon" href="{{ site_settings.favicon.url }}">
+    {% else %}
+        <link rel="shortcut icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    {% endif %}
 {% endblock %}
