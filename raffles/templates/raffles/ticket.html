@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Boleto de Rifa</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            border: 2px solid {{ template.font_color|default:'#000000' }};
+            width: 400px;
+            padding: 20px;
+            margin: 0 auto;
+            background-color: {{ template.background_color|default:'#FFFFFF' }};
+            color: {{ template.font_color|default:'#000000' }};
+            {% if template.background_image %}
+            background-image: url("{{ template.background_image.url }}");
+            background-size: cover;
+            {% endif %}
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .header img {
+            max-width: 150px;
+            margin-bottom: 10px;
+        }
+        .ticket-info {
+            display: flex;
+            justify-content: space-between;
+        }
+        .qr-code {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        {% if raffle.logo %}
+            <img src="{{ raffle.logo.path }}" alt="Logotipo">
+        {% endif %}
+        <h1>{{ raffle.name }} {{ raffle.year }}</h1>
+        <p>{{ raffle.description }}</p>
+    </div>
+
+    <h2>Boleto N°: {{ ticket.ticket_number }}</h2>
+
+    <div class="ticket-info">
+        <div>
+            <p><strong>Cliente:</strong> {{ ticket.customer.first_name }}</p>
+            <p><strong>Teléfono:</strong> {{ ticket.customer.phone }}</p>
+        </div>
+        <div>
+            <p><strong>Precio:</strong> ${{ ticket.price }}</p>
+            <p><strong>Fecha de Venta:</strong> {{ ticket.sold_at|date:"d/m/Y" }}</p>
+        </div>
+    </div>
+
+    <div class="qr-code">
+        <p>Código de Verificación:</p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ ticket.qr_code }}" alt="Código QR">
+        <p><small>{{ ticket.qr_code }}</small></p>
+    </div>
+
+    {% if raffle.social_links %}
+    <div class="social-links" style="text-align: center; margin-top: 20px;">
+        <p>{{ raffle.social_links }}</p>
+    </div>
+    {% endif %}
+</body>
+</html>

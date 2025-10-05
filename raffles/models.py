@@ -18,6 +18,23 @@ class Customer(models.Model):
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
 
+
+class TicketTemplate(models.Model):
+    """Modelo para plantillas de boletos."""
+    name = models.CharField(max_length=100, verbose_name="Nombre de la Plantilla")
+    background_color = models.CharField(max_length=7, default="#FFFFFF", verbose_name="Color de Fondo")
+    font_color = models.CharField(max_length=7, default="#000000", verbose_name="Color de la Fuente")
+    background_image = models.ImageField(upload_to='ticket_backgrounds/', blank=True, null=True, verbose_name="Imagen de Fondo")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Plantilla de Boleto"
+        verbose_name_plural = "Plantillas de Boletos"
+
+
 class Raffle(models.Model):
     """Modelo para gestionar las rifas."""
     name = models.CharField(max_length=255, verbose_name="Nombre de la Rifa")
@@ -30,6 +47,13 @@ class Raffle(models.Model):
     logo = models.ImageField(upload_to='logos/', blank=True, null=True, verbose_name="Logotipo")
     product_images = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Imágenes de Productos")
     social_links = models.TextField(blank=True, null=True, verbose_name="Links de Redes Sociales")
+    ticket_template = models.ForeignKey(
+        TicketTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Plantilla de Boleto"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
     def __str__(self):

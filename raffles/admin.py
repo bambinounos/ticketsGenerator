@@ -1,5 +1,10 @@
 from django.contrib import admin
-from .models import Customer, Raffle, Ticket
+from .models import Customer, Raffle, Ticket, TicketTemplate
+
+@admin.register(TicketTemplate)
+class TicketTemplateAdmin(admin.ModelAdmin):
+    list_display = ('name', 'background_color', 'font_color', 'created_at')
+    search_fields = ('name',)
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
@@ -9,9 +14,10 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(Raffle)
 class RaffleAdmin(admin.ModelAdmin):
-    list_display = ('name', 'year', 'created_at')
+    list_display = ('name', 'year', 'ticket_template', 'created_at')
     search_fields = ('name', 'year')
-    list_filter = ('year', 'created_at')
+    list_filter = ('year', 'created_at', 'ticket_template')
+    autocomplete_fields = ('ticket_template',)
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
