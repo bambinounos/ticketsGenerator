@@ -1,0 +1,6 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}{{ block.super }}
+    <link rel="shortcut icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+{% endblock %}

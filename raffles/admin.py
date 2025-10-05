@@ -1,6 +1,10 @@
 from django.contrib import admin
 from .models import Customer, Raffle, Ticket, TicketTemplate
 
+admin.site.site_header = "Raffles Admin"
+admin.site.site_title = "Raffles Admin Portal"
+admin.site.index_title = "Welcome to Raffles Admin Portal"
+
 @admin.register(TicketTemplate)
 class TicketTemplateAdmin(admin.ModelAdmin):
     list_display = ('name', 'background_color', 'font_color', 'created_at')
