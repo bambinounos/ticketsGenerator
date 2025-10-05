@@ -80,3 +80,15 @@ class Ticket(models.Model):
         verbose_name = "Boleto"
         verbose_name_plural = "Boletos"
         unique_together = ('raffle', 'ticket_number')
+
+
+class SiteSettings(models.Model):
+    """Modelo para la configuración del sitio."""
+    favicon = models.ImageField(upload_to='favicons/', blank=True, null=True, verbose_name="Favicon")
+
+    def __str__(self):
+        return "Configuración del Sitio"
+
+    class Meta:
+        verbose_name = "Configuración del Sitio"
+        verbose_name_plural = "Configuración del Sitio"
