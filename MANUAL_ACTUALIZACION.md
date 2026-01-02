@@ -68,7 +68,7 @@ python manage.py collectstatic --noinput
 Para que los cambios en el código de la aplicación surtan efecto, reinicia el servicio de Gunicorn.
 
 ```bash
-sudo systemctl restart gunicorn
+sudo systemctl restart tickets-generator
 ```
 
 ### 9. Verificar el Estado de la Aplicación
