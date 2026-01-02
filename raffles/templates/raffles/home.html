@@ -1,7 +1,13 @@
 <!DOCTYPE html>
+{% load static %}
 <html>
 <head>
     <title>Sistema de Rifas</title>
+    {% if site_settings and site_settings.favicon %}
+        <link rel="shortcut icon" href="{{ site_settings.favicon.url }}">
+    {% else %}
+        <link rel="shortcut icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    {% endif %}
     <style>
         body {
             font-family: sans-serif;
