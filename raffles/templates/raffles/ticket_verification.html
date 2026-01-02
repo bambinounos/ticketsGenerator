@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Verificación de Boleto</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #28a745;
+        }
+        .ticket-info {
+            text-align: left;
+            margin-top: 20px;
+        }
+        .ticket-info p {
+            margin: 10px 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .ticket-info strong {
+            display: inline-block;
+            width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>¡Boleto Válido!</h1>
+        <p>El boleto consultado se encuentra registrado en nuestro sistema.</p>
+
+        <div class="ticket-info">
+            <p><strong>Rifa:</strong> {{ ticket.raffle.name }} {{ ticket.raffle.year }}</p>
+            <p><strong>Número de Boleto:</strong> {{ ticket.ticket_number }}</p>
+            <p><strong>Cliente:</strong> {{ ticket.customer.first_name }}</p>
+            <p><strong>Estado:</strong> Vendido</p>
+            <p><strong>Fecha de Venta:</strong> {{ ticket.sold_at }}</p>
+            <p><strong>Código de Verificación:</strong> {{ ticket.qr_code }}</p>
+        </div>
+    </div>
+</body>
+</html>

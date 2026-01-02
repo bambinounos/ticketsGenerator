@@ -57,7 +57,7 @@
 
     <div class="qr-code">
         <p>Código de Verificación:</p>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ ticket.qr_code }}" alt="Código QR">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ request.scheme }}://{{ request.get_host }}{% url 'raffles:verify_ticket' ticket.qr_code %}" alt="Código QR">
         <p><small>{{ ticket.qr_code }}</small></p>
     </div>
 
