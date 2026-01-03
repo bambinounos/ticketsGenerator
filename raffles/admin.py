@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.html import format_html
+from django.urls import reverse
 from .models import Customer, Raffle, Ticket, TicketTemplate, SiteSettings
 
 admin.site.site_header = "Administración de Rifas"
@@ -35,7 +37,12 @@ class RaffleAdmin(admin.ModelAdmin):
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
-    list_display = ('ticket_number', 'raffle', 'customer', 'price', 'sold_at')
+    list_display = ('ticket_number', 'raffle', 'customer', 'price', 'sold_at', 'view_ticket_link')
     search_fields = ('customer__first_name', 'customer__identification', 'raffle__name', 'ticket_number')
     list_filter = ('raffle', 'sold_at')
     autocomplete_fields = ('raffle', 'customer')
+
+    def view_ticket_link(self, obj):
+        url = reverse('raffles:generate_ticket', args=[obj.id])
+        return format_html('<a href="{}" target="_blank" class="button">Ver Boleto</a>', url)
+    view_ticket_link.short_description = "Boleto"
