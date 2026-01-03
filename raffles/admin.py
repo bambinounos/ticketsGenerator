@@ -22,8 +22,8 @@ class TicketTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'phone', 'address', 'created_at')
-    search_fields = ('first_name', 'phone')
+    list_display = ('first_name', 'identification', 'phone', 'address', 'created_at')
+    search_fields = ('first_name', 'phone', 'identification')
     list_filter = ('created_at',)
 
 @admin.register(Raffle)
@@ -36,6 +36,6 @@ class RaffleAdmin(admin.ModelAdmin):
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     list_display = ('ticket_number', 'raffle', 'customer', 'price', 'sold_at')
-    search_fields = ('customer__first_name', 'raffle__name', 'ticket_number')
+    search_fields = ('customer__first_name', 'customer__identification', 'raffle__name', 'ticket_number')
     list_filter = ('raffle', 'sold_at')
     autocomplete_fields = ('raffle', 'customer')
