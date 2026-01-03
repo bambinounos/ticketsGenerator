@@ -1,101 +1,276 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Boleto de Rifa</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boleto N° {{ ticket.ticket_number }}</title>
+    <!-- CDNs for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
         body {
-            font-family: sans-serif;
-            border: 2px solid {{ template.font_color|default:'#000000' }};
-            width: 400px;
-            padding: 20px;
-            margin: 0 auto;
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #ticket-container {
+            width: 800px;
+            height: 400px;
             background-color: {{ template.background_color|default:'#FFFFFF' }};
             color: {{ template.font_color|default:'#000000' }};
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            overflow: hidden;
+            flex-shrink: 0; /* Prevent shrinking on small screens */
             {% if template.background_image %}
             background-image: url("{{ template.background_image.url }}");
-            background-size: cover;
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
             {% endif %}
         }
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .header img {
-            max-width: 150px;
-            margin-bottom: 10px;
-        }
-        .ticket-info {
+
+        /* Layout Grid */
+        .ticket-content {
             display: flex;
+            height: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .ticket-main {
+            flex: 2.5; /* 5/8 approx */
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
             justify-content: space-between;
         }
+
+        .ticket-stub {
+            flex: 1; /* 2/8 approx */
+            /* border-left: 2px dashed rgba(0,0,0,0.2); */
+            /* Removing border as it might clash with background design */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .header h1 { margin: 0; font-size: 28px; text-transform: uppercase; }
+        .header p { margin: 5px 0; font-size: 14px; }
+
+        .customer-info {
+            font-size: 16px;
+            margin-top: 10px;
+            line-height: 1.5;
+            background-color: rgba(255,255,255,0.7); /* Semi-transparent background for readability */
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .customer-info p { margin: 5px 0; }
+
+        .ticket-number-display {
+            font-size: 32px;
+            font-weight: bold;
+            color: #d9534f;
+            margin-bottom: 10px;
+            background-color: rgba(255,255,255,0.8);
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+
+        .social-icons {
+            margin-top: auto;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .social-icons a {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            color: inherit;
+            background-color: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .social-icons img {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            object-fit: contain;
+        }
+
         .qr-code {
-            text-align: center;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
         }
-        .no-print {
-            text-align: center;
-            margin-top: 20px;
+        .qr-code img {
+            max-width: 100%;
+            height: auto;
+            display: block;
         }
-        .btn-print {
+
+        .price-tag {
+            margin-top: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            background-color: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
             background-color: #007bff;
             color: white;
-            padding: 10px 20px;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
+            text-decoration: none;
+            transition: background 0.3s;
         }
-        .btn-print:hover {
-            background-color: #0056b3;
-        }
-        @media print {
-            .no-print {
-                display: none;
-            }
-            body {
-                border: none;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-            }
-        }
+        .btn:hover { background-color: #0056b3; }
+        .btn-secondary { background-color: #6c757d; }
+        .btn-secondary:hover { background-color: #5a6268; }
+
     </style>
 </head>
 <body>
-    <div class="header">
-        {% if raffle.logo %}
-            <img src="{{ raffle.logo.url }}" alt="Logotipo">
-        {% endif %}
-        <h1>{{ raffle.name }} {{ raffle.year }}</h1>
-        <p>{{ raffle.description }}</p>
-    </div>
 
-    <h2>Boleto N°: {{ ticket.ticket_number }}</h2>
+    <div id="ticket-container">
+        <!-- Content overlaid on background -->
+        <div class="ticket-content">
+            <div class="ticket-main">
+                <div class="header">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        {% if raffle.logo %}
+                            <img src="{{ raffle.logo.url }}" style="height: 60px; object-fit: contain;">
+                        {% endif %}
+                        <div>
+                            <h1>{{ raffle.name }}</h1>
+                            {% if raffle.description %}
+                            <p>{{ raffle.description|truncatechars:100 }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
 
-    <div class="ticket-info">
-        <div>
-            <p><strong>Cliente:</strong> {{ ticket.customer.first_name }}</p>
-            <p><strong>Teléfono:</strong> {{ ticket.customer.phone }}</p>
+                <div class="customer-info">
+                    <p><strong>Nombre:</strong> {{ ticket.customer.first_name }}</p>
+                    <p><strong>Teléfono:</strong> {{ ticket.customer.phone }}</p>
+                    {% if ticket.customer.identification %}
+                    <p><strong>ID:</strong> {{ ticket.customer.identification }}</p>
+                    {% endif %}
+                    <p><strong>Fecha Compra:</strong> {{ ticket.sold_at|date:"d/m/Y H:i" }}</p>
+                </div>
+
+                <!-- Social Links -->
+                <div class="social-icons">
+                    {% for link in raffle.social_links_list.all %}
+                        <a href="{{ link.url }}" target="_blank">
+                            {% if link.icon %}
+                                <img src="{{ link.icon.url }}" alt="{{ link.platform_name }}">
+                            {% endif %}
+                            <span>{{ link.platform_name }}</span>
+                        </a>
+                    {% empty %}
+                        <!-- Fallback for legacy text field if no social links objects exist -->
+                        {% if raffle.social_links %}
+                            <div style="background-color: rgba(255,255,255,0.8); padding: 5px 10px; border-radius: 8px;">
+                                {{ raffle.social_links }}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="ticket-stub">
+                <div class="ticket-number-display">N° {{ ticket.ticket_number }}</div>
+
+                <div class="qr-code">
+                    <!-- Added crossOrigin="Anonymous" to try to fix taint issues -->
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ request.scheme }}://{{ request.get_host }}{% url 'raffles:verify_ticket' ticket.qr_code %}"
+                         alt="QR"
+                         crossOrigin="Anonymous">
+                </div>
+
+                <p style="font-size: 10px; margin-top: 5px; background: rgba(255,255,255,0.8);">{{ ticket.qr_code|stringformat:"s"|slice:":8" }}...</p>
+
+                <div class="price-tag">${{ ticket.price }}</div>
+            </div>
         </div>
-        <div>
-            <p><strong>Precio:</strong> ${{ ticket.price }}</p>
-            <p><strong>Fecha de Venta:</strong> {{ ticket.sold_at|date:"d/m/Y" }}</p>
-        </div>
     </div>
 
-    <div class="qr-code">
-        <p>Código de Verificación:</p>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ request.scheme }}://{{ request.get_host }}{% url 'raffles:verify_ticket' ticket.qr_code %}" alt="Código QR">
-        <p><small>{{ ticket.qr_code }}</small></p>
+    <div class="controls">
+        <button id="download-btn" class="btn">Descargar PDF</button>
+        <!-- Optional: Back button -->
+        <button onclick="window.history.back()" class="btn btn-secondary">Volver</button>
     </div>
 
-    {% if raffle.social_links %}
-    <div class="social-links" style="text-align: center; margin-top: 20px;">
-        <p>{{ raffle.social_links }}</p>
-    </div>
-    {% endif %}
+    <script>
+        window.jsPDF = window.jspdf.jsPDF;
 
-    <div class="no-print">
-        <button onclick="window.print()" class="btn-print">Imprimir / Guardar como PDF</button>
-    </div>
+        document.getElementById('download-btn').addEventListener('click', function() {
+            const element = document.getElementById('ticket-container');
+            const btn = this;
+            btn.innerHTML = 'Generando...';
+            btn.disabled = true;
+
+            // Wait a moment to ensure images are fully loaded/rendered
+            setTimeout(() => {
+                html2canvas(element, {
+                    scale: 2, // Higher resolution
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: true,
+                    backgroundColor: null, // Transparent if needed
+                }).then(canvas => {
+                    try {
+                        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                        // Create PDF (Landscape, unit: px, size: [800, 400])
+                        const pdf = new jsPDF({
+                            orientation: 'landscape',
+                            unit: 'px',
+                            format: [800, 400],
+                            hotfixes: ['px_scaling']
+                        });
+
+                        pdf.addImage(imgData, 'JPEG', 0, 0, 800, 400);
+                        pdf.save('Boleto_{{ ticket.ticket_number }}.pdf');
+                    } catch (err) {
+                        console.error("PDF Generation Error: ", err);
+                        alert("Hubo un error generando el PDF. Por favor intente de nuevo.");
+                    } finally {
+                        btn.innerHTML = 'Descargar PDF';
+                        btn.disabled = false;
+                    }
+                }).catch(err => {
+                    console.error("Canvas Error: ", err);
+                    alert("Error al capturar el boleto. Verifique que las imágenes carguen correctamente.");
+                    btn.innerHTML = 'Descargar PDF';
+                    btn.disabled = false;
+                });
+            }, 100);
+        });
+    </script>
 </body>
 </html>
