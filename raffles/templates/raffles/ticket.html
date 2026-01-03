@@ -31,12 +31,39 @@
         .qr-code {
             text-align: center;
         }
+        .no-print {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .btn-print {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-print:hover {
+            background-color: #0056b3;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                border: none;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="header">
         {% if raffle.logo %}
-            <img src="{{ raffle.logo.path }}" alt="Logotipo">
+            <img src="{{ raffle.logo.url }}" alt="Logotipo">
         {% endif %}
         <h1>{{ raffle.name }} {{ raffle.year }}</h1>
         <p>{{ raffle.description }}</p>
@@ -66,5 +93,9 @@
         <p>{{ raffle.social_links }}</p>
     </div>
     {% endif %}
+
+    <div class="no-print">
+        <button onclick="window.print()" class="btn-print">Imprimir / Guardar como PDF</button>
+    </div>
 </body>
 </html>

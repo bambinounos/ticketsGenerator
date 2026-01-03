@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from .models import Customer, Raffle, Ticket, TicketTemplate
+from raffles.models import Customer, Raffle, Ticket, TicketTemplate
 
 class TicketGenerationTests(TestCase):
 
@@ -64,3 +64,12 @@ class TicketGenerationTests(TestCase):
         # Check for default colors in the template
         self.assertContains(response, '#FFFFFF') # default background
         self.assertContains(response, '#000000') # default font color
+
+    def test_qr_code_generation(self):
+        """Test that the QR code URL is correctly generated in the template."""
+        url = reverse('raffles:generate_ticket', args=[self.ticket.id])
+        response = self.client.get(url)
+        verify_url = reverse('raffles:verify_ticket', args=[self.ticket.qr_code])
+        # We expect the template to contain the API URL that embeds our verify URL
+        expected_qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=http://testserver{verify_url}"
+        self.assertContains(response, expected_qr_api_url)
