@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.urls import reverse
-from raffles.models import Customer, Raffle, Ticket, TicketTemplate
+from raffles.models import Customer, Raffle, Ticket, TicketTemplate, SocialLink
 
 class TicketGenerationTests(TestCase):
 
@@ -20,7 +20,8 @@ class TicketGenerationTests(TestCase):
             name="Test Raffle",
             year=2024,
             description="A test raffle.",
-            ticket_template=self.template
+            ticket_template=self.template,
+            social_links="Old Text Links" # for fallback test
         )
         self.ticket = Ticket.objects.create(
             raffle=self.raffle,
@@ -71,5 +72,35 @@ class TicketGenerationTests(TestCase):
         response = self.client.get(url)
         verify_url = reverse('raffles:verify_ticket', args=[self.ticket.qr_code])
         # We expect the template to contain the API URL that embeds our verify URL
-        expected_qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=http://testserver{verify_url}"
+        # Note: Updated size to 150x150 based on new template
+        expected_qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://testserver{verify_url}"
         self.assertContains(response, expected_qr_api_url)
+
+    def test_social_links_display(self):
+        """Test that social links are displayed correctly."""
+        # Create social links
+        SocialLink.objects.create(
+            raffle=self.raffle,
+            platform_name="Facebook",
+            url="https://facebook.com/testraffle"
+        )
+        SocialLink.objects.create(
+            raffle=self.raffle,
+            platform_name="Instagram",
+            url="https://instagram.com/testraffle"
+        )
+
+        url = reverse('raffles:generate_ticket', args=[self.ticket.id])
+        response = self.client.get(url)
+
+        self.assertContains(response, "https://facebook.com/testraffle")
+        self.assertContains(response, "Facebook")
+        self.assertContains(response, "https://instagram.com/testraffle")
+        self.assertContains(response, "Instagram")
+
+    def test_pdf_library_inclusion(self):
+        """Test that PDF generation libraries are included."""
+        url = reverse('raffles:generate_ticket', args=[self.ticket.id])
+        response = self.client.get(url)
+        self.assertContains(response, "html2canvas.min.js")
+        self.assertContains(response, "jspdf.umd.min.js")

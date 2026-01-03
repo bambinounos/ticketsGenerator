@@ -52,7 +52,7 @@ class Raffle(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name="Descripción")
     logo = models.ImageField(upload_to='logos/', blank=True, null=True, verbose_name="Logotipo")
     product_images = models.ImageField(upload_to='products/', blank=True, null=True, verbose_name="Imágenes de Productos")
-    social_links = models.TextField(blank=True, null=True, verbose_name="Links de Redes Sociales")
+    social_links = models.TextField(blank=True, null=True, verbose_name="Links de Redes Sociales (Texto antiguo)")
     ticket_template = models.ForeignKey(
         TicketTemplate,
         on_delete=models.SET_NULL,
@@ -78,6 +78,27 @@ class Raffle(models.Model):
         verbose_name = "Rifa"
         verbose_name_plural = "Rifas"
         unique_together = ('name', 'year')
+
+
+class SocialLink(models.Model):
+    """Modelo para enlaces de redes sociales."""
+    raffle = models.ForeignKey(
+        Raffle,
+        on_delete=models.CASCADE,
+        related_name='social_links_list',
+        verbose_name="Rifa"
+    )
+    platform_name = models.CharField(max_length=50, verbose_name="Nombre de la Plataforma")
+    url = models.URLField(verbose_name="Enlace")
+    icon = models.ImageField(upload_to='social_icons/', verbose_name="Icono", blank=True, null=True)
+
+    def __str__(self):
+        return self.platform_name
+
+    class Meta:
+        verbose_name = "Red Social"
+        verbose_name_plural = "Redes Sociales"
+
 
 class Ticket(models.Model):
     """Modelo para cada boleto de la rifa."""

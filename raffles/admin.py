@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Customer, Raffle, Ticket, TicketTemplate, SiteSettings
+from .models import Customer, Raffle, Ticket, TicketTemplate, SiteSettings, SocialLink
 
 admin.site.site_header = "Administración de Rifas"
 admin.site.site_title = "Portal de Administración de Rifas"
@@ -28,12 +28,17 @@ class CustomerAdmin(admin.ModelAdmin):
     search_fields = ('first_name', 'phone', 'identification', 'ticket__ticket_number')
     list_filter = ('created_at',)
 
+class SocialLinkInline(admin.TabularInline):
+    model = SocialLink
+    extra = 1
+
 @admin.register(Raffle)
 class RaffleAdmin(admin.ModelAdmin):
     list_display = ('name', 'year', 'ticket_template', 'created_at')
     search_fields = ('name', 'year')
     list_filter = ('year', 'created_at', 'ticket_template')
     autocomplete_fields = ('ticket_template',)
+    inlines = [SocialLinkInline]
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
