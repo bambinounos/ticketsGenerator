@@ -54,6 +54,15 @@ class Raffle(models.Model):
         blank=True,
         verbose_name="Plantilla de Boleto"
     )
+    draw_datetime = models.DateTimeField(null=True, blank=True, verbose_name="Fecha y Hora del Sorteo")
+    winning_ticket = models.ForeignKey(
+        'Ticket',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='won_raffle',
+        verbose_name="Boleto Ganador"
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
     def __str__(self):
