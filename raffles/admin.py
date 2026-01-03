@@ -23,7 +23,7 @@ class TicketTemplateAdmin(admin.ModelAdmin):
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ('first_name', 'identification', 'phone', 'address', 'created_at')
-    search_fields = ('first_name', 'phone', 'identification')
+    search_fields = ('first_name', 'phone', 'identification', 'ticket__ticket_number')
     list_filter = ('created_at',)
 
 @admin.register(Raffle)
