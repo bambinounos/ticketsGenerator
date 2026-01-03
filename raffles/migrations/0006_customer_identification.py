@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("raffles", "0004_raffle_draw_datetime_raffle_winning_ticket_and_more"),
+        ("raffles", "0005_raffle_draw_details"),
     ]
 
     operations = [
