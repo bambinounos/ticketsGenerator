@@ -6,10 +6,16 @@ from django.utils import timezone
 class Customer(models.Model):
     """Modelo para almacenar los datos del cliente."""
     first_name = models.CharField(max_length=100, verbose_name="Nombres")
+    identification = models.CharField(max_length=20, unique=True, blank=True, null=True, verbose_name="Cédula/RUC/Pasaporte")
     address = models.CharField(max_length=255, verbose_name="Dirección")
     phone = models.CharField(max_length=20, verbose_name="Teléfono")
     additional_info = models.TextField(blank=True, null=True, verbose_name="Información Adicional")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
+
+    def save(self, *args, **kwargs):
+        if self.identification == "":
+            self.identification = None
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.first_name} - {self.phone}"
