@@ -169,6 +169,9 @@
                             {% if raffle.description %}
                             <p>{{ raffle.description|truncatechars:100 }}</p>
                             {% endif %}
+                            {% if raffle.draw_datetime %}
+                            <p style="margin-top: 5px; font-weight: bold;">Sorteo: {{ raffle.draw_datetime|date:"d/m/Y H:i" }}</p>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
