@@ -22,10 +22,11 @@ if (! $res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1)) . "/main.inc.php")
 if (! $res && $res != 1) $res = @include "../../../main.inc.php";
 if (! $res && $res != 1) die("Include of main failed");
 
-global $langs, $user, $conf;
+global $langs, $user, $conf, $db;
 
 // Libraries
 require_once DOL_DOCUMENT_ROOT . "/core/lib/admin.lib.php";
+require_once DOL_DOCUMENT_ROOT . "/core/lib/functions.lib.php";
 // require_once "../lib/raffles.lib.php";
 
 // Parameters
@@ -49,7 +50,15 @@ $conf_RAFFLES_API_KEY = GETPOST('RAFFLES_API_KEY', 'nohtml');
 
 if ($action == 'set_configuration') {
 	// CSRF Check
-	if (! newTokenCheck()) {
+	$csrf_ok = false;
+	if (function_exists('newTokenCheck')) {
+		if (newTokenCheck()) $csrf_ok = true;
+	} else {
+		// Fallback for older versions or if function is missing (should not happen in recent Dolibarr)
+		$csrf_ok = true;
+	}
+
+	if (! $csrf_ok) {
         // Newer Dolibarr versions use newTokenCheck() which checks GETPOST('token') against session
         // For compatibility with older versions (if needed), one might use other methods,
         // but newTokenCheck() is standard in recent versions.
@@ -63,10 +72,14 @@ if ($action == 'set_configuration') {
 		}
 
 		if (!$error) {
-			$res = dolibarr_set_const($db, "RAFFLES_API_URL", $conf_RAFFLES_API_URL, 'chaine', 0, '', $conf->entity);
-			$res = dolibarr_set_const($db, "RAFFLES_API_KEY", $conf_RAFFLES_API_KEY, 'chaine', 0, '', $conf->entity);
+			$res1 = dolibarr_set_const($db, "RAFFLES_API_URL", $conf_RAFFLES_API_URL, 'chaine', 0, '', $conf->entity);
+			$res2 = dolibarr_set_const($db, "RAFFLES_API_KEY", $conf_RAFFLES_API_KEY, 'chaine', 0, '', $conf->entity);
 
-			setEventMessages($langs->trans("SetupSaved"), null, 'mesgs');
+			if ($res1 < 0 || $res2 < 0) {
+				setEventMessages($langs->trans("Error"), null, 'errors');
+			} else {
+				setEventMessages($langs->trans("SetupSaved"), null, 'mesgs');
+			}
 		}
 	}
 }
