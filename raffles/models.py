@@ -128,3 +128,29 @@ class SiteSettings(models.Model):
     class Meta:
         verbose_name = "Configuración del Sitio"
         verbose_name_plural = "Configuración del Sitio"
+
+class DolibarrIntegration(models.Model):
+    """Configuration for Dolibarr Integration."""
+    api_key = models.CharField(max_length=64, default=uuid.uuid4, unique=True, verbose_name="API Key", help_text="Secret key to validate requests from Dolibarr")
+    active_raffle = models.ForeignKey(Raffle, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Rifa Activa")
+    tickets_per_amount = models.PositiveIntegerField(default=1, verbose_name="Boletos por Monto")
+    amount_step = models.DecimalField(max_digits=10, decimal_places=2, default=100.00, verbose_name="Monto Base ($)")
+    is_active = models.BooleanField(default=False, verbose_name="Integración Activa")
+    default_ticket_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Precio del Boleto (Registro)")
+
+    def __str__(self):
+        return "Configuración Dolibarr"
+
+    class Meta:
+        verbose_name = "Integración Dolibarr"
+        verbose_name_plural = "Integración Dolibarr"
+
+class DolibarrTransaction(models.Model):
+    """Log of processed Dolibarr transactions to ensure idempotency."""
+    ref = models.CharField(max_length=100, unique=True, verbose_name="Referencia Dolibarr (Factura/Pedido)")
+    amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Monto")
+    tickets_count = models.IntegerField(verbose_name="Boletos Generados")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.ref

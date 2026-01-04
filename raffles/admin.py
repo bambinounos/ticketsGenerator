@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
-from .models import Customer, Raffle, Ticket, TicketTemplate, SiteSettings, SocialLink
+from .models import Customer, Raffle, Ticket, TicketTemplate, SiteSettings, SocialLink, DolibarrIntegration
 
 admin.site.site_header = "Administración de Rifas"
 admin.site.site_title = "Portal de Administración de Rifas"
@@ -51,3 +51,14 @@ class TicketAdmin(admin.ModelAdmin):
         url = reverse('raffles:generate_ticket', args=[obj.id])
         return format_html('<a href="{}" target="_blank" class="button">Ver Boleto</a>', url)
     view_ticket_link.short_description = "Boleto"
+
+@admin.register(DolibarrIntegration)
+class DolibarrIntegrationAdmin(admin.ModelAdmin):
+    list_display = ('is_active', 'tickets_per_amount', 'amount_step', 'active_raffle')
+    readonly_fields = ('api_key',)
+
+    def has_add_permission(self, request):
+        # Implement Singleton: only allow add if no instance exists
+        if self.model.objects.exists():
+            return False
+        return super().has_add_permission(request)
