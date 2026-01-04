@@ -1,0 +1,6 @@
+# Language file - raffles module
+RafflesSetup=Configuración del módulo Rifas
+RafflesApiUrl=URL del API de Rifas
+RafflesApiKey=API Key de Rifas
+ModuleRafflesName=Integración con Sistema de Rifas
+ModuleRafflesDesc=Módulo para enviar datos de facturación al sistema de Rifas mediante Webhook.
