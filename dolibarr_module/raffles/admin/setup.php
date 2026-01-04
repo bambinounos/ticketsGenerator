@@ -22,7 +22,7 @@ if (! $res && $i > 0 && file_exists(substr($tmp, 0, ($i + 1)) . "/main.inc.php")
 if (! $res && $res != 1) $res = @include "../../../main.inc.php";
 if (! $res && $res != 1) die("Include of main failed");
 
-global $langs, $user;
+global $langs, $user, $conf;
 
 // Libraries
 require_once DOL_DOCUMENT_ROOT . "/core/lib/admin.lib.php";

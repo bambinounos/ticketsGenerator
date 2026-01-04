@@ -32,7 +32,8 @@ class interface_99_modRaffles_RafflesTrigger
     public function run_trigger($action, $object, User $user, Translate $langs, Conf $conf)
     {
         // Check if module is enabled
-        if (empty($conf->raffles->enabled)) return 0;
+        // Use isset/empty check on the object property to avoid "Attempt to read property on null"
+        if (!isset($conf->raffles) || empty($conf->raffles->enabled)) return 0;
 
         // URL de tu sistema de rifas
         $apiUrl = !empty($conf->global->RAFFLES_API_URL) ? $conf->global->RAFFLES_API_URL : '';
