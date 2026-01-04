@@ -34,7 +34,7 @@ class interface_99_modRaffles_RafflesTrigger
         // Wrap everything in a try-catch to prevent crashing Dolibarr on any error
         try {
             // Check event first to avoid unnecessary processing on other events (like USER_LOGOUT)
-            // Evento: Validación de Factura
+            // Evento: Validación de Factura (Customer Invoice)
             if ($action != 'BILL_VALIDATE') {
                 return 0;
             }
@@ -45,8 +45,12 @@ class interface_99_modRaffles_RafflesTrigger
             }
 
             // Check if module is enabled
-            // Use isset/empty check on the object property to avoid "Attempt to read property on null"
             if (!isset($conf->raffles) || empty($conf->raffles->enabled)) return 0;
+
+            // Extra security check: Ensure the object is actually a Customer Invoice
+            if (!is_object($object) || (isset($object->element) && $object->element != 'facture')) {
+                 return 0;
+            }
 
             // URL de tu sistema de rifas
             $apiUrl = !empty($conf->global->RAFFLES_API_URL) ? $conf->global->RAFFLES_API_URL : '';
@@ -54,20 +58,17 @@ class interface_99_modRaffles_RafflesTrigger
             $apiKey = !empty($conf->global->RAFFLES_API_KEY) ? $conf->global->RAFFLES_API_KEY : '';
 
             if (empty($apiUrl) || empty($apiKey)) {
-                // Configuration not set, do nothing or log error
+                // Configuration not set
                 return 0;
             }
 
-            dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected", LOG_DEBUG);
+            dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected on Invoice " . (isset($object->ref) ? $object->ref : 'unknown'), LOG_DEBUG);
 
             // Obtener datos del cliente
             $thirdparty = null;
             if (is_object($object) && method_exists($object, 'fetch_thirdparty')) {
                 $object->fetch_thirdparty();
                 $thirdparty = $object->thirdparty;
-            } else {
-                // Should not happen for Invoices, but safety check
-                return 0;
             }
 
             if (!is_object($thirdparty)) {
@@ -76,16 +77,14 @@ class interface_99_modRaffles_RafflesTrigger
 
             // Datos a enviar
             $data = [
-                'ref' => $object->ref, // Referencia de la factura (INV-XXX)
+                'ref' => isset($object->ref) ? $object->ref : '',
                 'customer_id' => $thirdparty->id,
-                // RUC/Cédula. Dolibarr uses idprof1, idprof2... depending on country.
-                // We send multiple to let the backend decide or map.
                 'customer_identification' => !empty($thirdparty->idprof1) ? $thirdparty->idprof1 : (!empty($thirdparty->idprof2) ? $thirdparty->idprof2 : $thirdparty->id),
                 'customer_name' => $thirdparty->name,
                 'customer_email' => $thirdparty->email,
                 'customer_phone' => $thirdparty->phone,
                 'customer_address' => $thirdparty->address,
-                'total_amount' => $object->total_ttc, // Total con impuestos
+                'total_amount' => isset($object->total_ttc) ? $object->total_ttc : 0,
             ];
 
             // Enviar petición CURL
