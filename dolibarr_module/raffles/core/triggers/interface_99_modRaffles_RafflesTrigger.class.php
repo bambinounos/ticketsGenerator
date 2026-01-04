@@ -29,77 +29,95 @@ class interface_99_modRaffles_RafflesTrigger
      * @param Conf $conf Object conf
      * @return int <0 if KO, 0 if no triggered ran, >0 if OK
      */
-    public function run_trigger($action, $object, User $user, Translate $langs, Conf $conf)
+    public function run_trigger($action, $object, $user, $langs, $conf)
     {
-        // Check event first to avoid unnecessary processing on other events (like USER_LOGOUT)
-        // Evento: Validación de Factura
-        if ($action != 'BILL_VALIDATE') {
+        // Wrap everything in a try-catch to prevent crashing Dolibarr on any error
+        try {
+            // Check event first to avoid unnecessary processing on other events (like USER_LOGOUT)
+            // Evento: Validación de Factura
+            if ($action != 'BILL_VALIDATE') {
+                return 0;
+            }
+
+            // Ensure conf is an object before accessing it
+            if (!is_object($conf)) {
+                return 0;
+            }
+
+            // Check if module is enabled
+            // Use isset/empty check on the object property to avoid "Attempt to read property on null"
+            if (!isset($conf->raffles) || empty($conf->raffles->enabled)) return 0;
+
+            // URL de tu sistema de rifas
+            $apiUrl = !empty($conf->global->RAFFLES_API_URL) ? $conf->global->RAFFLES_API_URL : '';
+            // API Key configurada en el admin de rifas
+            $apiKey = !empty($conf->global->RAFFLES_API_KEY) ? $conf->global->RAFFLES_API_KEY : '';
+
+            if (empty($apiUrl) || empty($apiKey)) {
+                // Configuration not set, do nothing or log error
+                return 0;
+            }
+
+            dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected", LOG_DEBUG);
+
+            // Obtener datos del cliente
+            $thirdparty = null;
+            if (is_object($object) && method_exists($object, 'fetch_thirdparty')) {
+                $object->fetch_thirdparty();
+                $thirdparty = $object->thirdparty;
+            } else {
+                // Should not happen for Invoices, but safety check
+                return 0;
+            }
+
+            if (!is_object($thirdparty)) {
+                 return 0;
+            }
+
+            // Datos a enviar
+            $data = [
+                'ref' => $object->ref, // Referencia de la factura (INV-XXX)
+                'customer_id' => $thirdparty->id,
+                // RUC/Cédula. Dolibarr uses idprof1, idprof2... depending on country.
+                // We send multiple to let the backend decide or map.
+                'customer_identification' => !empty($thirdparty->idprof1) ? $thirdparty->idprof1 : (!empty($thirdparty->idprof2) ? $thirdparty->idprof2 : $thirdparty->id),
+                'customer_name' => $thirdparty->name,
+                'customer_email' => $thirdparty->email,
+                'customer_phone' => $thirdparty->phone,
+                'customer_address' => $thirdparty->address,
+                'total_amount' => $object->total_ttc, // Total con impuestos
+            ];
+
+            // Enviar petición CURL
+            $ch = curl_init($apiUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey
+            ]);
+
+            // Timeout to prevent hanging Dolibarr
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+
+            $response = curl_exec($ch);
+            $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+            if (curl_errno($ch)) {
+                dol_syslog("RafflesTrigger Error: " . curl_error($ch), LOG_ERR);
+            } else {
+                dol_syslog("RafflesTrigger Response [" . $httpcode . "]: " . $response, LOG_INFO);
+            }
+
+            curl_close($ch);
+
+        } catch (\Throwable $e) {
+            // Log the exception but do not stop the process
+            dol_syslog("RafflesTrigger Critical Error: " . $e->getMessage(), LOG_ERR);
             return 0;
         }
-
-        // Check if module is enabled
-        // Use isset/empty check on the object property to avoid "Attempt to read property on null"
-        if (!isset($conf->raffles) || empty($conf->raffles->enabled)) return 0;
-
-        // URL de tu sistema de rifas
-        $apiUrl = !empty($conf->global->RAFFLES_API_URL) ? $conf->global->RAFFLES_API_URL : '';
-        // API Key configurada en el admin de rifas
-        $apiKey = !empty($conf->global->RAFFLES_API_KEY) ? $conf->global->RAFFLES_API_KEY : '';
-
-        if (empty($apiUrl) || empty($apiKey)) {
-            // Configuration not set, do nothing or log error
-            return 0;
-        }
-
-        dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected", LOG_DEBUG);
-
-        // Obtener datos del cliente
-        if (method_exists($object, 'fetch_thirdparty')) {
-            $object->fetch_thirdparty();
-            $thirdparty = $object->thirdparty;
-        } else {
-            // Should not happen for Invoices, but safety check
-            return 0;
-        }
-
-        // Datos a enviar
-        $data = [
-            'ref' => $object->ref, // Referencia de la factura (INV-XXX)
-            'customer_id' => $thirdparty->id,
-            // RUC/Cédula. Dolibarr uses idprof1, idprof2... depending on country.
-            // We send multiple to let the backend decide or map.
-            'customer_identification' => $thirdparty->idprof1 ? $thirdparty->idprof1 : ($thirdparty->idprof2 ? $thirdparty->idprof2 : $thirdparty->id),
-            'customer_name' => $thirdparty->name,
-            'customer_email' => $thirdparty->email,
-            'customer_phone' => $thirdparty->phone,
-            'customer_address' => $thirdparty->address,
-            'total_amount' => $object->total_ttc, // Total con impuestos
-        ];
-
-        // Enviar petición CURL
-        $ch = curl_init($apiUrl);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey
-        ]);
-
-        // Timeout to prevent hanging Dolibarr
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-
-        $response = curl_exec($ch);
-        $httpcode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-        if (curl_errno($ch)) {
-            dol_syslog("RafflesTrigger Error: " . curl_error($ch), LOG_ERR);
-        } else {
-            dol_syslog("RafflesTrigger Response [" . $httpcode . "]: " . $response, LOG_INFO);
-        }
-
-        curl_close($ch);
 
         return 0;
     }
