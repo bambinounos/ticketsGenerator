@@ -1,0 +1,6 @@
+# Language file - raffles module
+RafflesSetup=Raffles Module Setup
+RafflesApiUrl=Raffles API URL
+RafflesApiKey=Raffles API Key
+ModuleRafflesName=Raffles System Integration
+ModuleRafflesDesc=Module to send billing data to the Raffles system via Webhook.
