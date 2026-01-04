@@ -48,7 +48,7 @@ class interface_99_modRaffles_RafflesTrigger
             if (!isset($conf->raffles) || empty($conf->raffles->enabled)) return 0;
 
             // Extra security check: Ensure the object is actually a Customer Invoice
-            if (!is_object($object) || (isset($object->element) && $object->element != 'facture')) {
+            if (!is_object($object) || !isset($object->element) || $object->element != 'facture') {
                  return 0;
             }
 
