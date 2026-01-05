@@ -1,4 +1,11 @@
 <?php
+/* Copyright (C) 2024      Jules
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ */
 
 /**
  *  \file       htdocs/raffles/core/triggers/interface_20_modRaffles_RafflesTrigger.class.php
@@ -9,20 +16,27 @@
 require_once DOL_DOCUMENT_ROOT . '/core/triggers/dolibarrtriggers.class.php';
 
 /**
- * Class InterfaceRafflesTrigger
- * Standard Dolibarr trigger class name convention (CamelCase)
+ * Class interface_20_modRaffles_RafflesTrigger
+ *
+ * Trigger for Raffles module
  */
-class InterfaceRafflesTrigger extends DolibarrTriggers
+class interface_20_modRaffles_RafflesTrigger extends DolibarrTriggers
 {
-    public $name = 'RafflesTrigger';
     public $family = 'raffles';
-    public $description = 'Trigger para enviar datos a sistema de rifas';
+    public $description = "Trigger para enviar datos a sistema de rifas";
     public $version = '1.0.0';
+    public $picto = 'raffles@raffles';
 
+    /**
+     * Constructor
+     *
+     * @param DoliDB $db Database handler
+     */
     public function __construct($db)
     {
         $this->db = $db;
-        $this->name = preg_replace('/^Interface/i', '', get_class($this));
+
+        $this->name = preg_replace('/^interface_([0-9]+)_([^_]+)_(.+)$/i', '\\3', get_class($this));
         $this->family = "raffles";
         $this->description = "Trigger para enviar datos a sistema de rifas";
         $this->version = '1.0.0';
@@ -32,12 +46,12 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
      * Function called when a Dolibarrr business event is done.
      * All functions "run_trigger" are triggered if file is inside triggers folder.
      *
-     * @param string $action Event action code
-     * @param object $object Object
-     * @param User $user Object user
-     * @param Translate $langs Object langs
-     * @param Conf $conf Object conf
-     * @return int <0 if KO, 0 if no triggered ran, >0 if OK
+     * @param string    $action Event action code
+     * @param object    $object Object
+     * @param User      $user   Object user
+     * @param Translate $langs  Object langs
+     * @param Conf      $conf   Object conf
+     * @return int              <0 if KO, 0 if no triggered ran, >0 if OK
      */
     public function run_trigger($action, $object, User $user, Translate $langs, Conf $conf)
     {
@@ -54,6 +68,8 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
             }
 
             // Check if module is enabled
+            // The module name in conf is usually lowercase. Check if 'raffles' is correct.
+            // Usually it is $conf->raffles->enabled.
             if (!isset($conf->raffles) || empty($conf->raffles->enabled)) return 0;
 
             // Extra security check: Ensure the object is actually a Customer Invoice
@@ -131,18 +147,8 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
             // Log the exception but do not stop the process
             dol_syslog("RafflesTrigger Critical Error: " . $e->getMessage(), LOG_ERR);
             return 0;
-        } catch (\Exception $e) {
-             // Fallback for older PHP if Throwable is not caught (though \Exception should be enough for older PHP)
-             dol_syslog("RafflesTrigger Critical Error (Exception): " . $e->getMessage(), LOG_ERR);
-             return 0;
         }
 
         return 0;
     }
 }
-
-/**
- * Class interface_20_modRaffles_RafflesTrigger
- * Backward compatibility alias for legacy file naming
- */
-class interface_20_modRaffles_RafflesTrigger extends InterfaceRafflesTrigger {}
