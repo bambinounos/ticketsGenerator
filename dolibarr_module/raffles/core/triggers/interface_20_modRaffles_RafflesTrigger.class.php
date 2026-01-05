@@ -96,10 +96,15 @@ class interface_20_modRaffles_RafflesTrigger extends DolibarrTriggers
             dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected on Invoice " . (isset($object->ref) ? $object->ref : 'unknown'), LOG_DEBUG);
 
             // Obtener datos del cliente
+            // MODIFICATION: Check if thirdparty is already loaded to avoid reloading it and potentially overwriting changes made by other modules
             $thirdparty = null;
-            if (is_object($object) && method_exists($object, 'fetch_thirdparty')) {
-                $object->fetch_thirdparty();
-                $thirdparty = $object->thirdparty;
+            if (is_object($object)) {
+                if (!empty($object->thirdparty) && is_object($object->thirdparty)) {
+                     $thirdparty = $object->thirdparty;
+                } elseif (method_exists($object, 'fetch_thirdparty')) {
+                     $object->fetch_thirdparty();
+                     $thirdparty = $object->thirdparty;
+                }
             }
 
             if (!is_object($thirdparty)) {
