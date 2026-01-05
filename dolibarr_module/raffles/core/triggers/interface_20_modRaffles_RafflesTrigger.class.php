@@ -130,3 +130,9 @@ class interface_20_modRaffles_RafflesTrigger
         return 0;
     }
 }
+
+/**
+ * Class InterfaceRafflesTrigger
+ * Alias for backward compatibility or ghost file issues
+ */
+class InterfaceRafflesTrigger extends interface_20_modRaffles_RafflesTrigger {}
