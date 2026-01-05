@@ -6,6 +6,8 @@
  *  \brief      Trigger for Raffles module
  */
 
+require_once DOL_DOCUMENT_ROOT . '/core/triggers/dolibarrtriggers.class.php';
+
 /**
  * Class InterfaceRafflesTrigger
  * Standard Dolibarr trigger class name convention (CamelCase)
@@ -37,7 +39,7 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
      * @param Conf $conf Object conf
      * @return int <0 if KO, 0 if no triggered ran, >0 if OK
      */
-    public function run_trigger($action, $object, $user, $langs, $conf)
+    public function run_trigger($action, $object, User $user, Translate $langs, Conf $conf)
     {
         // Fail fast if not the target action.
         if ($action != 'BILL_VALIDATE') {
@@ -138,3 +140,9 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
         return 0;
     }
 }
+
+/**
+ * Class interface_20_modRaffles_RafflesTrigger
+ * Backward compatibility alias for legacy file naming
+ */
+class interface_20_modRaffles_RafflesTrigger extends InterfaceRafflesTrigger {}
