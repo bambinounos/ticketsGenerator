@@ -1,12 +1,12 @@
 <?php
 
 /**
- *  \file       htdocs/raffles/core/triggers/interface_50_modRaffles_RafflesTrigger.class.php
+ *  \file       htdocs/raffles/core/triggers/interface_99_modRaffles_RafflesTrigger.class.php
  *  \ingroup    raffles
  *  \brief      Trigger for Raffles module
  */
 
-class interface_50_modRaffles_RafflesTrigger
+class interface_99_modRaffles_RafflesTrigger
 {
     public $name = 'RafflesTrigger';
     public $family = 'raffles';
