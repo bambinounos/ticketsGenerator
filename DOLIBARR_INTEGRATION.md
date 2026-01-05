@@ -23,14 +23,14 @@ Este documento detalla cómo configurar la integración entre Dolibarr y el sist
 
 Para enviar los datos a este sistema, necesitas crear un módulo personalizado o modificar un trigger existente en Dolibarr.
 
-**Archivo a crear/editar:** `htdocs/custom/mimodulo/core/triggers/interface_99_modMimodulo_MyTrigger.class.php`
+**Archivo a crear/editar:** `htdocs/custom/mimodulo/core/triggers/interface_50_modMimodulo_MyTrigger.class.php`
 
 ### Código de Ejemplo (PHP)
 
 ```php
 <?php
 
-class interface_99_modMimodulo_MyTrigger
+class interface_50_modMimodulo_MyTrigger
 {
     public $name = 'MyTrigger';
     public $family = 'mytrigger';

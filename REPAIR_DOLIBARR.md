@@ -22,11 +22,11 @@ O si lo instaló en la carpeta principal de módulos:
 
 ### Paso 3: Eliminar o Renombrar el Archivo
 Busque el archivo llamado:
-**`interface_99_modRaffles_RafflesTrigger.class.php`**
+**`interface_50_modRaffles_RafflesTrigger.class.php`**
 
 Puede:
 1. **Eliminarlo** (esto desactivará la integración temporalmente pero recuperará el sistema).
-2. **Renombrarlo** a `interface_99_modRaffles_RafflesTrigger.class.php.bak` (Dolibarr ignorará archivos que no terminen en .php).
+2. **Renombrarlo** a `interface_50_modRaffles_RafflesTrigger.class.php.bak` (Dolibarr ignorará archivos que no terminen en .php).
 
 Una vez hecho esto, **intente acceder a su Dolibarr de nuevo**. Debería funcionar correctamente.
 
@@ -39,7 +39,7 @@ Una vez haya recuperado el acceso, puede aplicar la corrección definitiva desca
 ### Corrección Manual
 Si desea editar los archivos manualmente:
 
-1. **Editar `raffles/core/triggers/interface_99_modRaffles_RafflesTrigger.class.php`**:
+1. **Editar `raffles/core/triggers/interface_50_modRaffles_RafflesTrigger.class.php`**:
    Busque la línea (alrededor de la línea 35):
    ```php
    if (empty($conf->raffles->enabled)) return 0;
