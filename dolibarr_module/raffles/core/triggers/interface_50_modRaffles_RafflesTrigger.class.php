@@ -6,7 +6,7 @@
  *  \brief      Trigger for Raffles module
  */
 
-class interface_99_modRaffles_RafflesTrigger
+class interface_50_modRaffles_RafflesTrigger
 {
     public $name = 'RafflesTrigger';
     public $family = 'raffles';
