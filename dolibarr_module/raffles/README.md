@@ -2,6 +2,16 @@
 
 Este módulo permite integrar Dolibarr con el Sistema de Rifas, enviando automáticamente información de facturas validadas para generar boletos.
 
+## ⚠️ IMPORTANTE: Actualización (Si ya tienes una versión anterior)
+
+Si estás actualizando desde una versión previa, **DEBES eliminar el archivo antiguo del trigger** para evitar conflictos y errores críticos.
+
+1.  Ve a la carpeta de triggers de tu instalación: `htdocs/custom/raffles/core/triggers/` (o `htdocs/raffles/core/triggers/`).
+2.  **Elimina** el archivo: `interface_50_modRaffles_RafflesTrigger.class.php`.
+    - La nueva versión usa `interface_20_...`. Si no borras el `50`, tendrás dos triggers ejecutándose y el sistema fallará.
+3.  Después de actualizar los archivos, se recomienda **reiniciar el servicio web** (Apache/Nginx) para limpiar la caché de PHP (OPcache):
+    - `sudo systemctl restart apache2` o `sudo service apache2 restart`
+
 ## Instalación
 
 1.  **Descargar el módulo:**
