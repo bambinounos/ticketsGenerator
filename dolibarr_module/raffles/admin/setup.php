@@ -54,14 +54,11 @@ if ($action == 'set_configuration') {
 	if (function_exists('newTokenCheck')) {
 		if (newTokenCheck()) $csrf_ok = true;
 	} else {
-		// Fallback for older versions or if function is missing (should not happen in recent Dolibarr)
+		// Fallback for older versions
 		$csrf_ok = true;
 	}
 
 	if (! $csrf_ok) {
-        // Newer Dolibarr versions use newTokenCheck() which checks GETPOST('token') against session
-        // For compatibility with older versions (if needed), one might use other methods,
-        // but newTokenCheck() is standard in recent versions.
         setEventMessages($langs->trans("ErrorBadCsrfToken"), null, 'errors');
     } else {
 		$error = 0;
@@ -96,6 +93,11 @@ llxHeader('', $langs->trans($page_name));
 // Subheader
 $linkback = '<a href="' . DOL_URL_ROOT . '/admin/modules.php?restore_lastsearch_values=1">' . $langs->trans("BackToModuleList") . '</a>';
 print load_fiche_titre($langs->trans($page_name), $linkback, 'title_setup');
+
+// Check for CURL
+if (!function_exists('curl_init')) {
+    print '<div class="error">' . $langs->trans("ErrorModuleRequireCurl") . ' (php-curl)</div><br>';
+}
 
 // Configuration form
 print '<form method="POST" action="' . $_SERVER["PHP_SELF"] . '">';
