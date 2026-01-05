@@ -1,7 +1,7 @@
 <?php
 
 /**
- *  \file       htdocs/raffles/core/triggers/interface_99_modRaffles_RafflesTrigger.class.php
+ *  \file       htdocs/raffles/core/triggers/interface_50_modRaffles_RafflesTrigger.class.php
  *  \ingroup    raffles
  *  \brief      Trigger for Raffles module
  */
@@ -32,7 +32,6 @@ class interface_50_modRaffles_RafflesTrigger
     public function run_trigger($action, $object, $user, $langs, $conf)
     {
         // Fail fast if not the target action.
-        // This is critical to avoid overhead or conflicts on other events.
         if ($action != 'BILL_VALIDATE') {
             return 0;
         }
@@ -62,6 +61,12 @@ class interface_50_modRaffles_RafflesTrigger
                 return 0;
             }
 
+            // Check if curl exists
+            if (!function_exists('curl_init')) {
+                dol_syslog("RafflesTrigger Error: CURL extension not available", LOG_ERR);
+                return 0;
+            }
+
             dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected on Invoice " . (isset($object->ref) ? $object->ref : 'unknown'), LOG_DEBUG);
 
             // Obtener datos del cliente
@@ -76,7 +81,7 @@ class interface_50_modRaffles_RafflesTrigger
             }
 
             // Datos a enviar
-            $data = [
+            $data = array(
                 'ref' => isset($object->ref) ? $object->ref : '',
                 'customer_id' => $thirdparty->id,
                 'customer_identification' => !empty($thirdparty->idprof1) ? $thirdparty->idprof1 : (!empty($thirdparty->idprof2) ? $thirdparty->idprof2 : $thirdparty->id),
@@ -85,17 +90,17 @@ class interface_50_modRaffles_RafflesTrigger
                 'customer_phone' => $thirdparty->phone,
                 'customer_address' => $thirdparty->address,
                 'total_amount' => isset($object->total_ttc) ? $object->total_ttc : 0,
-            ];
+            );
 
             // Enviar petición CURL
             $ch = curl_init($apiUrl);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            curl_setopt($ch, CURLOPT_HTTPHEADER, array(
                 'Content-Type: application/json',
                 'Authorization: Bearer ' . $apiKey
-            ]);
+            ));
 
             // Timeout to prevent hanging Dolibarr
             curl_setopt($ch, CURLOPT_TIMEOUT, 5);
@@ -116,6 +121,10 @@ class interface_50_modRaffles_RafflesTrigger
             // Log the exception but do not stop the process
             dol_syslog("RafflesTrigger Critical Error: " . $e->getMessage(), LOG_ERR);
             return 0;
+        } catch (\Exception $e) {
+             // Fallback for older PHP if Throwable is not caught (though \Exception should be enough for older PHP)
+             dol_syslog("RafflesTrigger Critical Error (Exception): " . $e->getMessage(), LOG_ERR);
+             return 0;
         }
 
         return 0;
