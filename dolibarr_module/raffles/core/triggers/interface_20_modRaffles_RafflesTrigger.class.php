@@ -138,9 +138,3 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
         return 0;
     }
 }
-
-/**
- * Class interface_20_modRaffles_RafflesTrigger
- * Backward compatibility alias for legacy file naming
- */
-class interface_20_modRaffles_RafflesTrigger extends InterfaceRafflesTrigger {}
