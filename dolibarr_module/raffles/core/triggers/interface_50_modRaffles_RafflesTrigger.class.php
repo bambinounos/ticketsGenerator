@@ -1,12 +1,12 @@
 <?php
 
 /**
- *  \file       htdocs/raffles/core/triggers/interface_99_modRaffles_RafflesTrigger.class.php
+ *  \file       htdocs/raffles/core/triggers/interface_50_modRaffles_RafflesTrigger.class.php
  *  \ingroup    raffles
  *  \brief      Trigger for Raffles module
  */
 
-class interface_99_modRaffles_RafflesTrigger
+class interface_50_modRaffles_RafflesTrigger
 {
     public $name = 'RafflesTrigger';
     public $family = 'raffles';
@@ -31,14 +31,14 @@ class interface_99_modRaffles_RafflesTrigger
      */
     public function run_trigger($action, $object, $user, $langs, $conf)
     {
-        // Wrap everything in a try-catch to prevent crashing Dolibarr on any error
-        try {
-            // Check event first to avoid unnecessary processing on other events (like USER_LOGOUT)
-            // Evento: Validación de Factura (Customer Invoice)
-            if ($action != 'BILL_VALIDATE') {
-                return 0;
-            }
+        // Fail fast if not the target action.
+        // This is critical to avoid overhead or conflicts on other events.
+        if ($action != 'BILL_VALIDATE') {
+            return 0;
+        }
 
+        // Wrap everything else in a try-catch to prevent crashing Dolibarr on any error
+        try {
             // Ensure conf is an object before accessing it
             if (!is_object($conf)) {
                 return 0;
