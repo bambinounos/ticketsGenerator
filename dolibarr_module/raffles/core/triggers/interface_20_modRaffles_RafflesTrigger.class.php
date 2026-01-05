@@ -6,7 +6,11 @@
  *  \brief      Trigger for Raffles module
  */
 
-class interface_20_modRaffles_RafflesTrigger
+/**
+ * Class InterfaceRafflesTrigger
+ * Standard Dolibarr trigger class name convention (CamelCase)
+ */
+class InterfaceRafflesTrigger
 {
     public $name = 'RafflesTrigger';
     public $family = 'raffles';
@@ -132,7 +136,7 @@ class interface_20_modRaffles_RafflesTrigger
 }
 
 /**
- * Class InterfaceRafflesTrigger
- * Alias for backward compatibility or ghost file issues
+ * Class interface_20_modRaffles_RafflesTrigger
+ * Backward compatibility alias for legacy file naming
  */
-class InterfaceRafflesTrigger extends interface_20_modRaffles_RafflesTrigger {}
+class interface_20_modRaffles_RafflesTrigger extends InterfaceRafflesTrigger {}
