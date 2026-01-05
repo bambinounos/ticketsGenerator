@@ -53,7 +53,7 @@ class interface_20_modRaffles_RafflesTrigger extends DolibarrTriggers
      * @param Conf      $conf   Object conf
      * @return int              <0 if KO, 0 if no triggered ran, >0 if OK
      */
-    public function run_trigger($action, $object, User $user, Translate $langs, Conf $conf)
+    public function run_trigger($action, $object, $user, $langs, $conf)
     {
         // Fail fast if not the target action.
         if ($action != 'BILL_VALIDATE') {
@@ -68,8 +68,6 @@ class interface_20_modRaffles_RafflesTrigger extends DolibarrTriggers
             }
 
             // Check if module is enabled
-            // The module name in conf is usually lowercase. Check if 'raffles' is correct.
-            // Usually it is $conf->raffles->enabled.
             if (!isset($conf->raffles) || empty($conf->raffles->enabled)) return 0;
 
             // Extra security check: Ensure the object is actually a Customer Invoice
