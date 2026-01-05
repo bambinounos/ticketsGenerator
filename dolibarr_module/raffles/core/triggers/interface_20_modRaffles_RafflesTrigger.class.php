@@ -10,7 +10,7 @@
  * Class InterfaceRafflesTrigger
  * Standard Dolibarr trigger class name convention (CamelCase)
  */
-class InterfaceRafflesTrigger
+class InterfaceRafflesTrigger extends DolibarrTriggers
 {
     public $name = 'RafflesTrigger';
     public $family = 'raffles';
@@ -20,6 +20,10 @@ class InterfaceRafflesTrigger
     public function __construct($db)
     {
         $this->db = $db;
+        $this->name = preg_replace('/^Interface/i', '', get_class($this));
+        $this->family = "raffles";
+        $this->description = "Trigger para enviar datos a sistema de rifas";
+        $this->version = '1.0.0';
     }
 
     /**
