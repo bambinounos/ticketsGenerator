@@ -163,18 +163,26 @@ class DolibarrWebhookView(View):
                 )
 
             # Find or Create Customer
+            customer_defaults = {
+                'first_name': name,
+                'email': data.get('customer_email', ''),
+                'phone': data.get('customer_phone', ''),
+                'address': data.get('customer_address', ''),
+                'additional_info': f"Imported from Dolibarr (ID: {external_id})"
+            }
+
             customer, created = Customer.objects.get_or_create(
                 identification=identification,
-                defaults={
-                    'first_name': name,
-                    'phone': data.get('customer_phone', ''),
-                    'address': data.get('customer_address', ''),
-                    'additional_info': f"Imported from Dolibarr (ID: {external_id})"
-                }
+                defaults=customer_defaults
             )
 
             if not created:
-                pass
+                # Update existing customer information
+                customer.first_name = name
+                customer.email = data.get('customer_email', customer.email)
+                customer.phone = data.get('customer_phone', customer.phone)
+                customer.address = data.get('customer_address', customer.address)
+                customer.save()
 
             # Generate Tickets
             created_tickets = []
