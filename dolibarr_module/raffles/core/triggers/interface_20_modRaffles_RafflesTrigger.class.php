@@ -40,6 +40,7 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
 
     /**
      * Function called when a Dolibarr business event is done.
+     * Note: Some Dolibarr versions call run_trigger() instead of runTrigger()
      *
      * @param string        $action Event action code
      * @param object        $object Object
@@ -50,6 +51,9 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
      */
     public function runTrigger($action, $object, User $user, Translate $langs, Conf $conf)
     {
+        // PROOF OF LIFE: Log every call to confirm trigger is being executed
+        dol_syslog("RafflesTrigger::runTrigger CALLED - action=" . $action, LOG_INFO);
+
         try {
             // 1. Verificación defensiva de activación del módulo
             // Use OR logic: module is enabled if EITHER signal says enabled
@@ -160,5 +164,22 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
             dol_syslog("RafflesTrigger Exception: " . $e->getMessage(), LOG_ERR);
             return 0;
         }
+    }
+
+    /**
+     * Alias for runTrigger - some Dolibarr versions call run_trigger() instead
+     * This ensures compatibility across different Dolibarr versions
+     *
+     * @param string        $action Event action code
+     * @param object        $object Object
+     * @param User          $user   Object user
+     * @param Translate     $langs  Object langs
+     * @param Conf          $conf   Object conf
+     * @return int         <0 if KO, 0 if no triggered ran, >0 if OK
+     */
+    public function run_trigger($action, $object, User $user, Translate $langs, Conf $conf)
+    {
+        dol_syslog("RafflesTrigger::run_trigger CALLED (alias) - action=" . $action, LOG_INFO);
+        return $this->runTrigger($action, $object, $user, $langs, $conf);
     }
 }
