@@ -8,8 +8,8 @@ class Customer(models.Model):
     first_name = models.CharField(max_length=100, verbose_name="Nombres")
     identification = models.CharField(max_length=20, unique=True, blank=True, null=True, verbose_name="Cédula/RUC/Pasaporte")
     email = models.EmailField(blank=True, null=True, verbose_name="Correo Electrónico")
-    address = models.CharField(max_length=255, verbose_name="Dirección")
-    phone = models.CharField(max_length=20, verbose_name="Teléfono")
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name="Dirección")
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Teléfono")
     additional_info = models.TextField(blank=True, null=True, verbose_name="Información Adicional")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Creación")
 
@@ -19,7 +19,7 @@ class Customer(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.first_name} - {self.phone}"
+        return f"{self.first_name} - {self.phone or 'Sin teléfono'}"
 
     class Meta:
         verbose_name = "Cliente"

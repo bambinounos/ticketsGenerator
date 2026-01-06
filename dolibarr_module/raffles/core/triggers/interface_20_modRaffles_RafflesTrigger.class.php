@@ -142,8 +142,30 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
 
                     if (curl_errno($ch)) {
                         dol_syslog("RafflesTrigger Error: " . curl_error($ch), LOG_ERR);
+                        setEventMessages("Rifas: Error de conexión - " . curl_error($ch), null, 'errors');
                     } else {
-                        dol_syslog("RafflesTrigger Response [" . $httpcode . "]: " . $response, LOG_INFO);
+                        $responseData = json_decode($response, true);
+                        $logLevel = ($httpcode >= 200 && $httpcode < 300) ? LOG_INFO : LOG_ERR;
+                        dol_syslog("RafflesTrigger Response [" . $httpcode . "]: " . $response, $logLevel);
+                        
+                        if ($httpcode == 200 || $httpcode == 201) {
+                            $ticketCount = isset($responseData['tickets_count']) ? $responseData['tickets_count'] : 0;
+                            $ticketNumbers = isset($responseData['ticket_numbers']) ? implode(', ', $responseData['ticket_numbers']) : '';
+                            setEventMessages("Rifas: Se generaron " . $ticketCount . " boleto(s) gratis. Números: " . $ticketNumbers, null, 'mesgs');
+                        } elseif ($httpcode == 401) {
+                            setEventMessages("Rifas: Error de autenticación - Verifique el API Key en la configuración", null, 'errors');
+                        } elseif ($httpcode == 409) {
+                            $existingCount = isset($responseData['existing_tickets_count']) ? $responseData['existing_tickets_count'] : 0;
+                            setEventMessages("Rifas: Esta factura ya generó " . $existingCount . " boleto(s) anteriormente", null, 'warnings');
+                        } elseif ($httpcode == 500) {
+                            $errorMsg = isset($responseData['error']) ? $responseData['error'] : 'Error desconocido';
+                            setEventMessages("Rifas: Error del servidor - " . $errorMsg, null, 'errors');
+                        } elseif ($httpcode == 503) {
+                            setEventMessages("Rifas: Integración desactivada o sin rifa activa configurada", null, 'warnings');
+                        } else {
+                            $errorMsg = isset($responseData['error']) ? $responseData['error'] : 'Error desconocido';
+                            setEventMessages("Rifas: Error [" . $httpcode . "] - " . $errorMsg, null, 'errors');
+                        }
                     }
 
                     curl_close($ch);
