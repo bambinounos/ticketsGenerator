@@ -50,26 +50,36 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
      */
     public function runTrigger($action, $object, User $user, Translate $langs, Conf $conf)
     {
-        // 1. Verificación defensiva de activación del módulo
-        if (empty($conf->raffles->enabled)) return 0;
+        try {
+            // 1. Verificación defensiva de activación del módulo
+            // CRITICAL: Check if $conf->raffles exists before accessing ->enabled
+            // This prevents fatal errors when module is disabled or not fully initialized
+            if (!isset($conf->raffles) || !is_object($conf->raffles) || empty($conf->raffles->enabled)) {
+                return 0;
+            }
 
-        switch ($action) {
-            case 'BILL_VALIDATE':
-                // Extra security check: Ensure the object is actually a Customer Invoice
-                // In v17, checking property existence is critical before access
-                if (!is_object($object) || empty($object->element) || $object->element != 'facture') {
-                     return 0;
-                }
+            // Also check via global constant as fallback (more stable source)
+            if (empty($conf->global->MAIN_MODULE_RAFFLES)) {
+                return 0;
+            }
 
-                dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected on Invoice " . (isset($object->ref) ? $object->ref : 'unknown'), LOG_DEBUG);
+            switch ($action) {
+                case 'BILL_VALIDATE':
+                    // Extra security check: Ensure the object is actually a Customer Invoice
+                    // In v17, checking property existence is critical before access
+                    if (!is_object($object) || empty($object->element) || $object->element != 'facture') {
+                        return 0;
+                    }
 
-                try {
+                    dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected on Invoice " . (isset($object->ref) ? $object->ref : 'unknown'), LOG_DEBUG);
+
                     // URL de tu sistema de rifas
                     $apiUrl = !empty($conf->global->RAFFLES_API_URL) ? $conf->global->RAFFLES_API_URL : '';
                     // API Key configurada en el admin de rifas
                     $apiKey = !empty($conf->global->RAFFLES_API_KEY) ? $conf->global->RAFFLES_API_KEY : '';
 
                     if (empty($apiUrl) || empty($apiKey)) {
+                        dol_syslog("RafflesTrigger: API URL or API Key not configured, skipping", LOG_DEBUG);
                         return 0;
                     }
 
@@ -81,30 +91,38 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
                     // Obtener datos del cliente
                     $thirdparty = null;
                     if (!empty($object->thirdparty) && is_object($object->thirdparty)) {
-                         $thirdparty = $object->thirdparty;
+                        $thirdparty = $object->thirdparty;
                     } elseif (method_exists($object, 'fetch_thirdparty')) {
-                         $object->fetch_thirdparty();
-                         $thirdparty = $object->thirdparty;
+                        $object->fetch_thirdparty();
+                        if (isset($object->thirdparty) && is_object($object->thirdparty)) {
+                            $thirdparty = $object->thirdparty;
+                        }
                     }
 
                     if (!is_object($thirdparty)) {
-                         return 0;
+                        dol_syslog("RafflesTrigger: Could not fetch thirdparty for invoice", LOG_WARNING);
+                        return 0;
                     }
 
-                    // Datos a enviar
+                    // Datos a enviar - use defensive property access
                     $data = array(
                         'ref' => isset($object->ref) ? $object->ref : '',
-                        'customer_id' => $thirdparty->id,
-                        'customer_identification' => !empty($thirdparty->idprof1) ? $thirdparty->idprof1 : (!empty($thirdparty->idprof2) ? $thirdparty->idprof2 : $thirdparty->id),
-                        'customer_name' => $thirdparty->name,
-                        'customer_email' => $thirdparty->email,
-                        'customer_phone' => $thirdparty->phone,
-                        'customer_address' => $thirdparty->address,
+                        'customer_id' => isset($thirdparty->id) ? $thirdparty->id : 0,
+                        'customer_identification' => !empty($thirdparty->idprof1) ? $thirdparty->idprof1 : (!empty($thirdparty->idprof2) ? $thirdparty->idprof2 : (isset($thirdparty->id) ? $thirdparty->id : '')),
+                        'customer_name' => isset($thirdparty->name) ? $thirdparty->name : '',
+                        'customer_email' => isset($thirdparty->email) ? $thirdparty->email : '',
+                        'customer_phone' => isset($thirdparty->phone) ? $thirdparty->phone : '',
+                        'customer_address' => isset($thirdparty->address) ? $thirdparty->address : '',
                         'total_amount' => isset($object->total_ttc) ? $object->total_ttc : 0,
                     );
 
                     // Enviar petición CURL
                     $ch = curl_init($apiUrl);
+                    if ($ch === false) {
+                        dol_syslog("RafflesTrigger Error: Failed to initialize CURL", LOG_ERR);
+                        return 0;
+                    }
+
                     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                     curl_setopt($ch, CURLOPT_POST, true);
                     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
@@ -113,7 +131,7 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
                         'Authorization: Bearer ' . $apiKey
                     ));
 
-                    curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+                    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
                     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 
                     $response = curl_exec($ch);
@@ -126,17 +144,22 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
                     }
 
                     curl_close($ch);
+                    break;
 
-                } catch (Throwable $e) {
-                    dol_syslog("RafflesTrigger Critical Error: " . $e->getMessage(), LOG_ERR);
-                    return 0;
-                }
-                break;
+                default:
+                    break;
+            }
 
-            default:
-                break;
+            return 0;
+
+        } catch (Throwable $e) {
+            // Catch any error/exception to prevent breaking other triggers
+            dol_syslog("RafflesTrigger Critical Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine(), LOG_ERR);
+            return 0;
+        } catch (Exception $e) {
+            // Fallback for PHP 5.x compatibility (though we target PHP 7+)
+            dol_syslog("RafflesTrigger Exception: " . $e->getMessage(), LOG_ERR);
+            return 0;
         }
-
-        return 0;
     }
 }

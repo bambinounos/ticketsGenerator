@@ -15,7 +15,12 @@ class modRaffles extends DolibarrModules
 	 */
 	public function __construct($db)
 	{
+		global $conf;
+
 		$this->db = $db;
+
+		// Call parent constructor to initialize defaults
+		parent::__construct($db);
 
 		// Id for module (must be unique).
 		// Use a random value or a value from a range assigned to the developer
