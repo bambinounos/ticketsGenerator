@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
+from django.shortcuts import render
 from .models import Customer, Raffle, Ticket, TicketTemplate, SiteSettings, SocialLink, DolibarrIntegration
 
 admin.site.site_header = "Administración de Rifas"
@@ -46,11 +47,31 @@ class TicketAdmin(admin.ModelAdmin):
     search_fields = ('customer__first_name', 'customer__identification', 'raffle__name', 'ticket_number')
     list_filter = ('raffle', 'sold_at')
     autocomplete_fields = ('raffle', 'customer')
+    actions = ['download_selected_tickets']
 
     def view_ticket_link(self, obj):
         url = reverse('raffles:generate_ticket', args=[obj.id])
         return format_html('<a href="{}" target="_blank" class="button">Ver Boleto</a>', url)
     view_ticket_link.short_description = "Boleto"
+
+    def download_selected_tickets(self, request, queryset):
+        """
+        Action to render the bulk download page for selected tickets.
+        """
+        # Prefetch related data to avoid N+1 queries during rendering
+        tickets = queryset.select_related('raffle', 'customer', 'raffle__ticket_template')
+
+        # We need to make sure we pass the correct context.
+        # The template loop expects 'ticket' and we pass 'ticket.raffle.ticket_template' there.
+
+        context = {
+            'tickets': tickets,
+            'title': f'Descarga masiva de {tickets.count()} boletos',
+        }
+
+        return render(request, 'raffles/bulk_tickets.html', context)
+
+    download_selected_tickets.short_description = "Descargar boletos seleccionados (PDF Masivo)"
 
 @admin.register(DolibarrIntegration)
 class DolibarrIntegrationAdmin(admin.ModelAdmin):
