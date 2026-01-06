@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Descarga Masiva de Boletos</title>
+    <!-- CDNs for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    {% include "raffles/includes/ticket_css.html" %}
+    <style>
+        .bulk-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            align-items: center;
+        }
+        .status-message {
+            margin-top: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .progress-bar {
+            width: 80%;
+            height: 20px;
+            background-color: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+        .progress-fill {
+            height: 100%;
+            background-color: #28a745;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls" style="position: sticky; top: 0; background: rgba(240,240,240,0.9); width: 100%; padding: 10px; z-index: 1000; text-align: center; border-bottom: 1px solid #ccc;">
+        <h1>Descarga Masiva de {{ tickets|length }} Boletos</h1>
+        <button id="download-all-btn" class="btn">Generar y Descargar PDF Masivo</button>
+        <button onclick="window.history.back()" class="btn btn-secondary">Volver</button>
+
+        <div class="status-message" id="status-msg">Listo para generar.</div>
+        <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+    </div>
+
+    <div class="bulk-container">
+        {% for ticket in tickets %}
+            <!-- We assume the backend passes the correct raffle and template objects, or we access them via ticket relations -->
+            {% include "raffles/includes/ticket_card.html" with ticket=ticket raffle=ticket.raffle template=ticket.raffle.ticket_template %}
+        {% endfor %}
+    </div>
+
+    <script>
+        window.jsPDF = window.jspdf.jsPDF;
+
+        document.getElementById('download-all-btn').addEventListener('click', async function() {
+            const btn = this;
+            const statusMsg = document.getElementById('status-msg');
+            const progressBar = document.getElementById('progress-bar');
+            const progressFill = document.getElementById('progress-fill');
+
+            btn.disabled = true;
+            btn.innerHTML = 'Generando...';
+            progressBar.style.display = 'block';
+            statusMsg.innerText = 'Inicializando...';
+
+            // Function to wait for images
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            await wait(500); // Give time for browser to render
+
+            const ticketElements = document.querySelectorAll('.ticket-container');
+            const total = ticketElements.length;
+
+            try {
+                // Initialize PDF
+                const pdf = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'px',
+                    format: [800, 400],
+                    hotfixes: ['px_scaling']
+                });
+
+                for (let i = 0; i < total; i++) {
+                    const element = ticketElements[i];
+                    statusMsg.innerText = `Procesando boleto ${i + 1} de ${total}...`;
+                    progressFill.style.width = `${((i) / total) * 100}%`;
+
+                    // Generate canvas
+                    const canvas = await html2canvas(element, {
+                        scale: 2,
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false,
+                        backgroundColor: null,
+                    });
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.90);
+
+                    if (i > 0) {
+                        pdf.addPage([800, 400], 'landscape');
+                    }
+                    pdf.addImage(imgData, 'JPEG', 0, 0, 800, 400);
+
+                    // Small pause to let UI update
+                    await wait(50);
+                }
+
+                statusMsg.innerText = 'Guardando PDF...';
+                progressFill.style.width = '100%';
+
+                pdf.save('Boletos_Masivos.pdf');
+
+                statusMsg.innerText = '¡Descarga completa!';
+                btn.innerHTML = 'Descargar PDF Masivo';
+                btn.disabled = false;
+
+            } catch (err) {
+                console.error("Bulk Generation Error: ", err);
+                statusMsg.innerText = 'Error durante la generación.';
+                alert("Hubo un error generando los boletos. Revise la consola.");
+                btn.innerHTML = 'Reintentar';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
