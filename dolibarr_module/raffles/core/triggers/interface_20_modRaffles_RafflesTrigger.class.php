@@ -52,14 +52,13 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
     {
         try {
             // 1. Verificación defensiva de activación del módulo
-            // CRITICAL: Check if $conf->raffles exists before accessing ->enabled
-            // This prevents fatal errors when module is disabled or not fully initialized
-            if (!isset($conf->raffles) || !is_object($conf->raffles) || empty($conf->raffles->enabled)) {
-                return 0;
-            }
+            // Use OR logic: module is enabled if EITHER signal says enabled
+            // This prevents false negatives when one source is unavailable
+            $enabledViaConf = isset($conf->raffles) && is_object($conf->raffles) && !empty($conf->raffles->enabled);
+            $enabledViaGlobal = !empty($conf->global->MAIN_MODULE_RAFFLES);
 
-            // Also check via global constant as fallback (more stable source)
-            if (empty($conf->global->MAIN_MODULE_RAFFLES)) {
+            if (!$enabledViaConf && !$enabledViaGlobal) {
+                dol_syslog("RafflesTrigger: Module not enabled (conf->raffles->enabled=" . ($enabledViaConf ? '1' : '0') . ", MAIN_MODULE_RAFFLES=" . ($enabledViaGlobal ? '1' : '0') . ")", LOG_DEBUG);
                 return 0;
             }
 
