@@ -35,7 +35,7 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
         $this->name = preg_replace('/^Interface/i', '', get_class($this));
         $this->family = "raffles";
         $this->description = "Trigger para enviar datos a sistema de rifas";
-        $this->version = '1.0.0';
+        $this->version = '1.1.0';
     }
 
     /**
@@ -150,7 +150,7 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
                         dol_syslog("RafflesTrigger Response [" . $httpcode . "]: " . $response, $logLevel);
                         
                         if ($httpcode == 200 || $httpcode == 201) {
-                            $ticketCount = isset($responseData['tickets_count']) ? $responseData['tickets_count'] : 0;
+                            $ticketCount = isset($responseData['tickets_generated']) ? $responseData['tickets_generated'] : 0;
                             $ticketNumbers = isset($responseData['ticket_numbers']) ? implode(', ', $responseData['ticket_numbers']) : '';
                             setEventMessages("Rifas: Se generaron " . $ticketCount . " boleto(s) gratis. Números: " . $ticketNumbers, null, 'mesgs');
                         } elseif ($httpcode == 401) {
