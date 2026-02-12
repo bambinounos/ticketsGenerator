@@ -35,7 +35,7 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
         $this->name = preg_replace('/^Interface/i', '', get_class($this));
         $this->family = "raffles";
         $this->description = "Trigger para enviar datos a sistema de rifas";
-        $this->version = '1.0.0';
+        $this->version = '1.1.0';
     }
 
     /**
@@ -110,6 +110,7 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
                     // Datos a enviar - use defensive property access
                     $data = array(
                         'ref' => isset($object->ref) ? $object->ref : '',
+                        'facture_id' => isset($object->id) ? $object->id : 0,
                         'customer_id' => isset($thirdparty->id) ? $thirdparty->id : 0,
                         'customer_identification' => !empty($thirdparty->idprof1) ? $thirdparty->idprof1 : (!empty($thirdparty->idprof2) ? $thirdparty->idprof2 : (isset($thirdparty->id) ? $thirdparty->id : '')),
                         'customer_name' => isset($thirdparty->name) ? $thirdparty->name : '',
@@ -149,13 +150,13 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
                         dol_syslog("RafflesTrigger Response [" . $httpcode . "]: " . $response, $logLevel);
                         
                         if ($httpcode == 200 || $httpcode == 201) {
-                            $ticketCount = isset($responseData['tickets_count']) ? $responseData['tickets_count'] : 0;
+                            $ticketCount = isset($responseData['tickets_generated']) ? $responseData['tickets_generated'] : 0;
                             $ticketNumbers = isset($responseData['ticket_numbers']) ? implode(', ', $responseData['ticket_numbers']) : '';
                             setEventMessages("Rifas: Se generaron " . $ticketCount . " boleto(s) gratis. Números: " . $ticketNumbers, null, 'mesgs');
                         } elseif ($httpcode == 401) {
                             setEventMessages("Rifas: Error de autenticación - Verifique el API Key en la configuración", null, 'errors');
                         } elseif ($httpcode == 409) {
-                            $existingCount = isset($responseData['existing_tickets_count']) ? $responseData['existing_tickets_count'] : 0;
+                            $existingCount = isset($responseData['tickets_previously_generated']) ? $responseData['tickets_previously_generated'] : 0;
                             setEventMessages("Rifas: Esta factura ya generó " . $existingCount . " boleto(s) anteriormente", null, 'warnings');
                         } elseif ($httpcode == 500) {
                             $errorMsg = isset($responseData['error']) ? $responseData['error'] : 'Error desconocido';

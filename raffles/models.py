@@ -149,6 +149,7 @@ class DolibarrIntegration(models.Model):
 class DolibarrTransaction(models.Model):
     """Log of processed Dolibarr transactions to ensure idempotency."""
     ref = models.CharField(max_length=100, unique=True, verbose_name="Referencia Dolibarr (Factura/Pedido)")
+    facture_id = models.PositiveIntegerField(null=True, blank=True, verbose_name="ID Factura Dolibarr", help_text="ID interno de la factura en Dolibarr (no cambia al re-validar)")
     amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Monto")
     tickets_count = models.IntegerField(verbose_name="Boletos Generados")
     created_at = models.DateTimeField(auto_now_add=True)

@@ -3,8 +3,9 @@ from django.utils.html import format_html
 from django.urls import reverse
 from django.shortcuts import render
 from .models import Customer, Raffle, Ticket, TicketTemplate, SiteSettings, SocialLink, DolibarrIntegration
+from .version import __version__
 
-admin.site.site_header = "Administración de Rifas"
+admin.site.site_header = f"Administración de Rifas v{__version__}"
 admin.site.site_title = "Portal de Administración de Rifas"
 admin.site.index_title = "Bienvenido al Portal de Administración de Rifas"
 
