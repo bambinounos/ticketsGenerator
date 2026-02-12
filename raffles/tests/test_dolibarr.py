@@ -1,7 +1,7 @@
 
 from django.test import TestCase, Client
 from django.urls import reverse
-from raffles.models import DolibarrIntegration, Raffle, Customer, Ticket
+from raffles.models import DolibarrIntegration, DolibarrTransaction, Raffle, Customer, Ticket
 import json
 
 class DolibarrIntegrationTest(TestCase):
@@ -82,10 +82,9 @@ class DolibarrIntegrationTest(TestCase):
         response = self.client.post(self.url, data, content_type='application/json', **headers)
         self.assertEqual(response.status_code, 201)
 
-        # Verify Customer was NOT overwritten (based on current logic to preserve manual edits)
-        # Note: If we change logic to update, update this test.
+        # Verify Customer was updated with new data from Dolibarr
         c = Customer.objects.get(identification='0999999999')
-        self.assertEqual(c.first_name, 'Old Name')
+        self.assertEqual(c.first_name, 'New Name')
 
     def test_duplicate_transaction(self):
         headers = {'HTTP_AUTHORIZATION': 'Bearer secret-key-123'}
@@ -102,3 +101,88 @@ class DolibarrIntegrationTest(TestCase):
         # Second request: Conflict
         response = self.client.post(self.url, data, content_type='application/json', **headers)
         self.assertEqual(response.status_code, 409)
+
+    def test_duplicate_by_facture_id_different_ref(self):
+        """
+        Simulates: invoice validated (ref=FA-001), then edited in Dolibarr,
+        then re-validated with a new ref (FA-002) but same facture_id.
+        Should detect the duplicate via facture_id and return 409.
+        """
+        headers = {'HTTP_AUTHORIZATION': 'Bearer secret-key-123'}
+
+        # First validation: ref=FA-001, facture_id=42
+        data = {
+            'customer_identification': '0912345678',
+            'customer_name': 'Juan Perez',
+            'total_amount': 200.00,
+            'ref': 'FA-001',
+            'facture_id': 42,
+        }
+        response = self.client.post(self.url, data, content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()['tickets_generated'], 2)
+        self.assertEqual(Ticket.objects.count(), 2)
+
+        # Verify facture_id was stored
+        txn = DolibarrTransaction.objects.get(ref='FA-001')
+        self.assertEqual(txn.facture_id, 42)
+
+        # Re-validation after edit: NEW ref (FA-002) but SAME facture_id (42)
+        data2 = {
+            'customer_identification': '0912345678',
+            'customer_name': 'Juan Perez',
+            'total_amount': 300.00,
+            'ref': 'FA-002',
+            'facture_id': 42,
+        }
+        response = self.client.post(self.url, data2, content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 409)
+        json_resp = response.json()
+        self.assertEqual(json_resp['tickets_previously_generated'], 2)
+
+        # Verify no extra tickets were created
+        self.assertEqual(Ticket.objects.count(), 2)
+
+    def test_duplicate_by_ref_without_facture_id(self):
+        """Backward compatibility: duplicate detection still works with ref only."""
+        headers = {'HTTP_AUTHORIZATION': 'Bearer secret-key-123'}
+        data = {
+            'customer_identification': '0912345678',
+            'total_amount': 100.00,
+            'ref': 'FA-NODUP',
+        }
+
+        response = self.client.post(self.url, data, content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.post(self.url, data, content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 409)
+
+        self.assertEqual(Ticket.objects.count(), 1)
+
+    def test_different_invoices_same_customer(self):
+        """Different invoices from the same customer should each generate tickets."""
+        headers = {'HTTP_AUTHORIZATION': 'Bearer secret-key-123'}
+
+        data1 = {
+            'customer_identification': '0912345678',
+            'customer_name': 'Juan Perez',
+            'total_amount': 100.00,
+            'ref': 'FA-100',
+            'facture_id': 100,
+        }
+        data2 = {
+            'customer_identification': '0912345678',
+            'customer_name': 'Juan Perez',
+            'total_amount': 100.00,
+            'ref': 'FA-101',
+            'facture_id': 101,
+        }
+
+        response = self.client.post(self.url, data1, content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 201)
+
+        response = self.client.post(self.url, data2, content_type='application/json', **headers)
+        self.assertEqual(response.status_code, 201)
+
+        self.assertEqual(Ticket.objects.count(), 2)

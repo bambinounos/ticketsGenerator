@@ -156,23 +156,39 @@ class DolibarrWebhookView(View):
         # Determine additional info
         external_id = data.get('customer_id', '')
         ref = data.get('ref', '')  # Invoice/Order ref for idempotency
+        facture_id = data.get('facture_id')  # Dolibarr internal invoice ID (never changes on re-validation)
 
-        logger.info(f"DolibarrWebhook: Processing request - ref={ref}, customer={name}, amount={amount}")
+        # Normalize facture_id to int or None
+        try:
+            facture_id = int(facture_id) if facture_id else None
+        except (ValueError, TypeError):
+            facture_id = None
+
+        logger.info(f"DolibarrWebhook: Processing request - ref={ref}, facture_id={facture_id}, customer={name}, amount={amount}")
 
         if not identification:
             logger.warning("DolibarrWebhook: Missing customer identification")
             return JsonResponse({'error': 'Missing customer identification'}, status=400)
 
         # Check idempotency - prevent duplicate ticket generation for same invoice
-        if ref:
-            existing_transaction = DolibarrTransaction.objects.filter(ref=ref).first()
-            if existing_transaction:
-                logger.info(f"DolibarrWebhook: Transaction already processed - ref={ref}, tickets_count={existing_transaction.tickets_count}")
-                return JsonResponse({
-                    'error': 'Transaction already processed',
-                    'ref': ref,
-                    'tickets_previously_generated': existing_transaction.tickets_count
-                }, status=409)
+        # Check by ref OR by facture_id (Dolibarr internal ID that never changes)
+        from django.db.models import Q
+        existing_transaction = None
+        if ref or facture_id:
+            q = Q()
+            if ref:
+                q |= Q(ref=ref)
+            if facture_id:
+                q |= Q(facture_id=facture_id)
+            existing_transaction = DolibarrTransaction.objects.filter(q).first()
+
+        if existing_transaction:
+            logger.info(f"DolibarrWebhook: Transaction already processed - ref={ref}, facture_id={facture_id}, existing_ref={existing_transaction.ref}, tickets_count={existing_transaction.tickets_count}")
+            return JsonResponse({
+                'error': 'Transaction already processed',
+                'ref': existing_transaction.ref,
+                'tickets_previously_generated': existing_transaction.tickets_count
+            }, status=409)
 
         try:
             amount = float(amount)
@@ -210,10 +226,11 @@ class DolibarrWebhookView(View):
                 if ref:
                     DolibarrTransaction.objects.create(
                         ref=ref,
+                        facture_id=facture_id,
                         amount=amount,
                         tickets_count=tickets_to_generate
                     )
-                    logger.info(f"DolibarrWebhook: Created transaction record - ref={ref}")
+                    logger.info(f"DolibarrWebhook: Created transaction record - ref={ref}, facture_id={facture_id}")
 
                 # Find or Create Customer
                 customer_defaults = {
