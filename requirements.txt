@@ -1,5 +1,6 @@
-django
-python-decouple
-psycopg2-binary
-gunicorn
-Pillow
+# Python 3.10+ / Django 5.2 LTS  (NO subir a 6.0: requiere Python 3.12+)
+Django==5.2.11
+python-decouple>=3.8,<4.0
+psycopg2-binary>=2.9,<3.0
+gunicorn>=21.2,<24.0
+Pillow>=10.4,<12.0
