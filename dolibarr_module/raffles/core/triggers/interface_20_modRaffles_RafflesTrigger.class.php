@@ -35,12 +35,11 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
         $this->name = preg_replace('/^Interface/i', '', get_class($this));
         $this->family = "raffles";
         $this->description = "Trigger para enviar datos a sistema de rifas";
-        $this->version = '1.1.0';
+        $this->version = '1.2.0';
     }
 
     /**
      * Function called when a Dolibarr business event is done.
-     * Note: Some Dolibarr versions call run_trigger() instead of runTrigger()
      *
      * @param string        $action Event action code
      * @param object        $object Object
@@ -59,7 +58,7 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
             // Use OR logic: module is enabled if EITHER signal says enabled
             // This prevents false negatives when one source is unavailable
             $enabledViaConf = isset($conf->raffles) && is_object($conf->raffles) && !empty($conf->raffles->enabled);
-            $enabledViaGlobal = !empty($conf->global->MAIN_MODULE_RAFFLES);
+            $enabledViaGlobal = getDolGlobalInt('MAIN_MODULE_RAFFLES') > 0;
 
             if (!$enabledViaConf && !$enabledViaGlobal) {
                 dol_syslog("RafflesTrigger: Module not enabled (conf->raffles->enabled=" . ($enabledViaConf ? '1' : '0') . ", MAIN_MODULE_RAFFLES=" . ($enabledViaGlobal ? '1' : '0') . ")", LOG_DEBUG);
@@ -69,17 +68,14 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
             switch ($action) {
                 case 'BILL_VALIDATE':
                     // Extra security check: Ensure the object is actually a Customer Invoice
-                    // In v17, checking property existence is critical before access
                     if (!is_object($object) || empty($object->element) || $object->element != 'facture') {
                         return 0;
                     }
 
                     dol_syslog("RafflesTrigger: Action BILL_VALIDATE detected on Invoice " . (isset($object->ref) ? $object->ref : 'unknown'), LOG_DEBUG);
 
-                    // URL de tu sistema de rifas
-                    $apiUrl = !empty($conf->global->RAFFLES_API_URL) ? $conf->global->RAFFLES_API_URL : '';
-                    // API Key configurada en el admin de rifas
-                    $apiKey = !empty($conf->global->RAFFLES_API_KEY) ? $conf->global->RAFFLES_API_KEY : '';
+                    $apiUrl = getDolGlobalString('RAFFLES_API_URL');
+                    $apiKey = getDolGlobalString('RAFFLES_API_KEY');
 
                     if (empty($apiUrl) || empty($apiKey)) {
                         dol_syslog("RafflesTrigger: API URL or API Key not configured, skipping", LOG_DEBUG);
@@ -182,27 +178,6 @@ class InterfaceRafflesTrigger extends DolibarrTriggers
             // Catch any error/exception to prevent breaking other triggers
             dol_syslog("RafflesTrigger Critical Error: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine(), LOG_ERR);
             return 0;
-        } catch (Exception $e) {
-            // Fallback for PHP 5.x compatibility (though we target PHP 7+)
-            dol_syslog("RafflesTrigger Exception: " . $e->getMessage(), LOG_ERR);
-            return 0;
         }
-    }
-
-    /**
-     * Alias for runTrigger - some Dolibarr versions call run_trigger() instead
-     * This ensures compatibility across different Dolibarr versions
-     *
-     * @param string        $action Event action code
-     * @param object        $object Object
-     * @param User          $user   Object user
-     * @param Translate     $langs  Object langs
-     * @param Conf          $conf   Object conf
-     * @return int         <0 if KO, 0 if no triggered ran, >0 if OK
-     */
-    public function run_trigger($action, $object, User $user, Translate $langs, Conf $conf)
-    {
-        dol_syslog("RafflesTrigger::run_trigger CALLED (alias) - action=" . $action, LOG_INFO);
-        return $this->runTrigger($action, $object, $user, $langs, $conf);
     }
 }

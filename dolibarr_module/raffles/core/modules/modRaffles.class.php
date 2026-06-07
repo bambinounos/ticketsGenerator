@@ -40,7 +40,7 @@ class modRaffles extends DolibarrModules
 		$this->description = "Integración con Sistema de Rifas (Webhook)";
 
 		// Possible values for version are: 'development', 'experimental', 'dolibarr' or version
-		$this->version = '1.1.0';
+		$this->version = '1.2.0';
 
 		// Key used in llx_const table to save module setup setup (always 'MAIN_MODULE_' + uppercase(name))
 		$this->const_name = 'MAIN_MODULE_' . strtoupper($this->name);
@@ -75,8 +75,8 @@ class modRaffles extends DolibarrModules
 		$this->depends = array();
 		$this->requiredby = array();
 		$this->conflictwith = array();
-		$this->phpmin = array(7, 0);
-		$this->need_dolibarr_version = array(14, 0);
+		$this->phpmin = array(7, 4);
+		$this->need_dolibarr_version = array(19, 0);
 		$this->langfiles = array("raffles@raffles");
 
 		// Constants
