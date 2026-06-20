@@ -63,6 +63,9 @@ db.sqlite3
 db.sqlite3-journal
 media/
 
+# Project settings (each deploy has its own with security headers; see config/settings.py.example)
+config/settings.py
+
 # Flask stuff:
 instance/
 .webassets-cache
