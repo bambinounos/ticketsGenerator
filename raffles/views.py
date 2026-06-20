@@ -474,7 +474,7 @@ def discard_winner(request, raffle_id, prize_id):
 
     messages.success(
         request,
-        f"Ganador del premio #{prize.position} descartado ({WinnerDiscard.Reason(reason).label}). Podés volver a sortear.",
+        f"Ganador del premio #{prize.position} descartado ({WinnerDiscard.Reason(reason).label}). Puede volver a sortear.",
     )
     return redirect('raffles:raffle_draw_dashboard', raffle_id=raffle.id)
 

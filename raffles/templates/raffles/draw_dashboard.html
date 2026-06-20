@@ -161,7 +161,7 @@
                     <div class="pool-meta">Elegibles (factura pagada): <strong class="text-success">{{ eligible_count }}</strong></div>
                     <div class="pool-meta">No verificados: <strong class="text-warning">{{ unverified_count }}</strong></div>
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-5">
                     <div class="pool-meta mb-2">Distribución por instancia:</div>
                     {% for slug, count in instances_summary %}
                         <span class="badge-instance me-2 mb-1 d-inline-block">{{ slug }} · {{ count }}</span>
@@ -169,13 +169,22 @@
                         <span class="text-muted">No hay boletos en esta rifa todavía.</span>
                     {% endfor %}
                 </div>
+                <div class="col-md-3 text-end">
+                    <div class="form-check form-switch d-inline-block text-start">
+                        <input class="form-check-input" type="checkbox" role="switch" id="excludeUnpaidToggle" checked>
+                        <label class="form-check-label" for="excludeUnpaidToggle">Excluir impagos del pool</label>
+                    </div>
+                    <div id="excludeUnpaidWarning" class="small text-warning mt-2" style="display:none;">
+                        <i class="fas fa-triangle-exclamation"></i> Verifique los pagos manualmente en Dolibarr antes de declarar al ganador.
+                    </div>
+                </div>
             </div>
         </div>
 
         {% if no_prizes_yet %}
             <div class="alert alert-warning">
                 <i class="fas fa-triangle-exclamation"></i>
-                Esta rifa no tiene premios cargados. <a href="/admin/raffles/raffle/{{ raffle.id }}/change/" class="alert-link">Agregalos en el admin</a> antes de sortear.
+                Esta rifa no tiene premios cargados. <a href="/admin/raffles/raffle/{{ raffle.id }}/change/" class="alert-link">Agréguelos en el admin</a> antes de sortear.
             </div>
         {% endif %}
 
@@ -333,11 +342,20 @@
             });
         }
 
+        const excludeToggle = document.getElementById('excludeUnpaidToggle');
+        const excludeWarning = document.getElementById('excludeUnpaidWarning');
+        if (excludeToggle && excludeWarning) {
+            excludeToggle.addEventListener('change', () => {
+                excludeWarning.style.display = excludeToggle.checked ? 'none' : 'block';
+            });
+        }
+
         document.querySelectorAll('.js-draw').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const prizeId = btn.dataset.prizeId;
                 const prizeName = btn.dataset.prizeName;
                 const prizePos = btn.dataset.prizePosition;
+                const excludeUnpaid = excludeToggle && excludeToggle.checked ? '1' : '0';
 
                 document.getElementById('drawPrizeLabel').textContent = `Premio #${prizePos} — ${prizeName}`;
                 document.getElementById('drawRolling').textContent = '0000';
@@ -350,7 +368,7 @@
                     const response = await fetch(`/raffles/${RAFFLE_ID}/prize/${prizeId}/draw/`, {
                         method: 'POST',
                         headers: { 'X-CSRFToken': csrf, 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: 'exclude_unpaid=1',
+                        body: 'exclude_unpaid=' + excludeUnpaid,
                     });
                     payload = await response.json();
                     if (!response.ok) {
