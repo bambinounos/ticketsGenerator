@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteo · {{ raffle.name }} {{ raffle.year }}</title>
+    {% if site_settings and site_settings.favicon %}
+        <link rel="shortcut icon" href="{{ site_settings.favicon.url }}">
+    {% else %}
+        <link rel="shortcut icon" type="image/svg+xml" href="{% static 'img/favicon.svg' %}">
+    {% endif %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .panel-card {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(8px);
+        }
+        .prize-card {
+            background: rgba(15, 23, 42, 0.75);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .prize-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+        }
+        .prize-card.has-winner {
+            border-left: 4px solid #22c55e;
+        }
+        .prize-card.pending {
+            border-left: 4px solid #f59e0b;
+        }
+        .prize-position {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #60a5fa;
+            line-height: 1;
+        }
+        .badge-instance {
+            background: rgba(96, 165, 250, 0.15);
+            color: #93c5fd;
+            border: 1px solid rgba(96, 165, 250, 0.4);
+            padding: 0.25rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .badge-paid { background: rgba(34, 197, 94, 0.18); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.5); }
+        .badge-unpaid { background: rgba(239, 68, 68, 0.18); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.5); }
+        .badge-unknown { background: rgba(245, 158, 11, 0.18); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.5); }
+        .badge-pay {
+            padding: 0.25rem 0.6rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .btn-draw {
+            background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            transition: all 0.2s ease;
+        }
+        .btn-draw:hover {
+            transform: scale(1.04);
+            color: white;
+            box-shadow: 0 8px 24px rgba(124, 58, 237, 0.4);
+        }
+        .pool-meta {
+            font-size: 0.95rem;
+            color: #cbd5e1;
+        }
+        .pool-meta strong { color: #f1f5f9; }
+        .draw-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+        }
+        .draw-overlay.active { display: flex; }
+        .draw-rolling {
+            font-size: 9rem;
+            font-weight: 900;
+            color: #60a5fa;
+            text-shadow: 0 0 60px rgba(96, 165, 250, 0.7);
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+        .draw-reveal {
+            font-size: 1.3rem;
+            color: #e2e8f0;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .draw-reveal.show { opacity: 1; }
+        .draw-reveal .winner-name {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #fbbf24;
+            display: block;
+            margin: 0.5rem 0;
+        }
+        .nav-link-custom {
+            color: #94a3b8;
+            text-decoration: none;
+        }
+        .nav-link-custom:hover { color: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <!-- Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-1"><i class="fas fa-dice"></i> Sorteo: {{ raffle.name }}</h1>
+                <div class="pool-meta">Año {{ raffle.year }} · <a href="{% url 'raffles:winners_list' raffle.id %}" class="nav-link-custom">Ver ganadores actuales</a> · <a href="/admin/raffles/raffle/{{ raffle.id }}/change/" class="nav-link-custom">Editar premios en admin</a></div>
+            </div>
+            <div class="text-end">
+                <a href="{{ force_refresh_url }}" class="btn btn-outline-light btn-sm"><i class="fas fa-sync"></i> Refrescar verificación de pagos</a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Pool summary -->
+        <div class="panel-card">
+            <div class="row g-3 align-items-center">
+                <div class="col-md-4">
+                    <div class="pool-meta">Pool total: <strong>{{ total_pool_count }}</strong> boletos</div>
+                    <div class="pool-meta">Elegibles (factura pagada): <strong class="text-success">{{ eligible_count }}</strong></div>
+                    <div class="pool-meta">No verificados: <strong class="text-warning">{{ unverified_count }}</strong></div>
+                </div>
+                <div class="col-md-8">
+                    <div class="pool-meta mb-2">Distribución por instancia:</div>
+                    {% for slug, count in instances_summary %}
+                        <span class="badge-instance me-2 mb-1 d-inline-block">{{ slug }} · {{ count }}</span>
+                    {% empty %}
+                        <span class="text-muted">No hay boletos en esta rifa todavía.</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {% if no_prizes_yet %}
+            <div class="alert alert-warning">
+                <i class="fas fa-triangle-exclamation"></i>
+                Esta rifa no tiene premios cargados. <a href="/admin/raffles/raffle/{{ raffle.id }}/change/" class="alert-link">Agregalos en el admin</a> antes de sortear.
+            </div>
+        {% endif %}
+
+        <!-- Prize cards -->
+        {% for state in prize_states %}
+            {% with prize=state.prize %}
+            <div class="prize-card {% if prize.winning_ticket_id %}has-winner{% else %}pending{% endif %}">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-1 text-center">
+                        <div class="prize-position">{{ prize.position }}°</div>
+                    </div>
+                    <div class="col-md-4">
+                        <h4 class="mb-1">{{ prize.name }}</h4>
+                        {% if prize.description %}<div class="text-muted small">{{ prize.description }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        {% if prize.winning_ticket %}
+                            <div><strong>Boleto N° {{ prize.winning_ticket.ticket_number }}</strong></div>
+                            <div>{{ prize.winning_ticket.customer.first_name }}</div>
+                            <div class="small text-muted">
+                                {% if prize.winning_ticket.customer.phone %}<i class="fas fa-phone"></i> {{ prize.winning_ticket.customer.phone }}{% endif %}
+                                {% if prize.winning_ticket.customer.email %}<br><i class="fas fa-envelope"></i> {{ prize.winning_ticket.customer.email }}{% endif %}
+                            </div>
+                            <div class="mt-2">
+                                {% if prize.winning_ticket.dolibarr_transaction and prize.winning_ticket.dolibarr_transaction.instance %}
+                                    <span class="badge-instance">{{ prize.winning_ticket.dolibarr_transaction.instance.name }}</span>
+                                {% else %}
+                                    <span class="badge-instance">Manual</span>
+                                {% endif %}
+                                {% if state.payment_status == True %}
+                                    <span class="badge-pay badge-paid"><i class="fas fa-check"></i> Factura pagada</span>
+                                {% elif state.payment_status == False %}
+                                    <span class="badge-pay badge-unpaid"><i class="fas fa-xmark"></i> Factura impaga</span>
+                                {% else %}
+                                    <span class="badge-pay badge-unknown"><i class="fas fa-question"></i> Pago no verificado</span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="text-warning"><i class="fas fa-hourglass-half"></i> Sin sortear todavía</div>
+                            {% if state.discard_history %}
+                                <details class="mt-2">
+                                    <summary class="small text-muted">{{ state.discard_history|length }} descarte(s) previos</summary>
+                                    <ul class="small text-muted mt-1 ps-3">
+                                        {% for d in state.discard_history %}
+                                            <li>Boleto {{ d.ticket.ticket_number }} — {{ d.get_reason_display }}{% if d.discarded_by %} ({{ d.discarded_by.username }}){% endif %}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </details>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 text-end">
+                        {% if prize.winning_ticket_id %}
+                            <button class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#discardModal-{{ prize.id }}">
+                                <i class="fas fa-trash"></i> Descartar
+                            </button>
+                        {% else %}
+                            <button class="btn-draw js-draw" data-prize-id="{{ prize.id }}" data-prize-name="{{ prize.name }}" data-prize-position="{{ prize.position }}">
+                                <i class="fas fa-dice"></i> Sortear
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discard modal -->
+            <div class="modal fade" id="discardModal-{{ prize.id }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <form method="post" action="{% url 'raffles:discard_winner' raffle.id prize.id %}" class="modal-content text-dark">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title">Descartar ganador del Premio #{{ prize.position }} — {{ prize.name }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>Boleto a descartar: <strong>N° {{ prize.winning_ticket.ticket_number }} — {{ prize.winning_ticket.customer.first_name }}</strong></p>
+                            <div class="mb-3">
+                                <label class="form-label">Motivo</label>
+                                <select name="reason" class="form-select" required>
+                                    <option value="">Elegir motivo...</option>
+                                    {% for value, label in state.discard_reasons %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notas (opcional)</label>
+                                <textarea name="notes" class="form-control" rows="3" placeholder="Detalle de contacto, fecha de llamada, etc."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Confirmar descarte</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endwith %}
+        {% endfor %}
+
+        <div class="text-center mt-4 small text-muted">
+            <i class="fas fa-shield-halved"></i> Sorteo con `secrets.choice` (CSPRNG). Auditable en el código.
+        </div>
+    </div>
+
+    <!-- Draw animation overlay -->
+    <div class="draw-overlay" id="drawOverlay">
+        <div class="text-center mb-2 small text-info" id="drawPrizeLabel"></div>
+        <div class="draw-rolling" id="drawRolling">0000</div>
+        <div class="draw-reveal" id="drawReveal">
+            <div>Boleto N°<span id="revealNumber"></span></div>
+            <span class="winner-name" id="revealName"></span>
+            <div class="small text-muted" id="revealMeta"></div>
+            <button class="btn btn-light mt-4" onclick="closeDraw()">Continuar</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const CSRF_TOKEN = document.querySelector('input[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+        const RAFFLE_ID = {{ raffle.id }};
+
+        function getCookie(name) {
+            const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+            return m ? decodeURIComponent(m.pop()) : '';
+        }
+
+        function pad(n) { return String(n).padStart(4, '0'); }
+
+        function closeDraw() {
+            document.getElementById('drawOverlay').classList.remove('active');
+            document.getElementById('drawReveal').classList.remove('show');
+            // Reload so the page reflects the new winner.
+            window.location.reload();
+        }
+
+        function animateRoll(finalNumber, durationMs) {
+            return new Promise(resolve => {
+                const el = document.getElementById('drawRolling');
+                const start = performance.now();
+                function frame(now) {
+                    const elapsed = now - start;
+                    if (elapsed >= durationMs) {
+                        el.textContent = pad(finalNumber);
+                        resolve();
+                        return;
+                    }
+                    // Pseudo-random changes that slow down over time.
+                    const noise = Math.floor(Math.random() * 9999);
+                    el.textContent = pad(noise);
+                    const delay = 30 + (elapsed / durationMs) * 200;
+                    setTimeout(() => requestAnimationFrame(frame), delay);
+                }
+                requestAnimationFrame(frame);
+            });
+        }
+
+        document.querySelectorAll('.js-draw').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const prizeId = btn.dataset.prizeId;
+                const prizeName = btn.dataset.prizeName;
+                const prizePos = btn.dataset.prizePosition;
+
+                document.getElementById('drawPrizeLabel').textContent = `Premio #${prizePos} — ${prizeName}`;
+                document.getElementById('drawRolling').textContent = '0000';
+                document.getElementById('drawReveal').classList.remove('show');
+                document.getElementById('drawOverlay').classList.add('active');
+
+                let payload;
+                try {
+                    const csrf = getCookie('csrftoken') || CSRF_TOKEN;
+                    const response = await fetch(`/raffles/${RAFFLE_ID}/prize/${prizeId}/draw/`, {
+                        method: 'POST',
+                        headers: { 'X-CSRFToken': csrf, 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'exclude_unpaid=1',
+                    });
+                    payload = await response.json();
+                    if (!response.ok) {
+                        document.getElementById('drawOverlay').classList.remove('active');
+                        alert(payload.error || 'Error en el sorteo');
+                        return;
+                    }
+                } catch (err) {
+                    document.getElementById('drawOverlay').classList.remove('active');
+                    alert('Error de red durante el sorteo: ' + err);
+                    return;
+                }
+
+                await animateRoll(payload.ticket_number, 2500);
+
+                document.getElementById('revealNumber').textContent = ' ' + payload.ticket_number;
+                document.getElementById('revealName').textContent = payload.customer_name;
+                const metaBits = [];
+                if (payload.customer_phone) metaBits.push(`📞 ${payload.customer_phone}`);
+                if (payload.customer_email) metaBits.push(`✉️ ${payload.customer_email}`);
+                if (payload.instance_slug) metaBits.push(`Instancia: ${payload.instance_slug}`);
+                document.getElementById('revealMeta').textContent = metaBits.join(' · ');
+                document.getElementById('drawReveal').classList.add('show');
+            });
+        });
+    </script>
+</body>
+</html>
