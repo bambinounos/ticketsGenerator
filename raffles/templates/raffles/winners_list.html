@@ -59,6 +59,9 @@
                 <h1 class="mb-1"><i class="fas fa-trophy"></i> Ganadores: {{ raffle.name }}</h1>
                 <div class="text-muted">Año {{ raffle.year }} · <a href="{% url 'raffles:raffle_draw_dashboard' raffle.id %}" class="nav-link-custom">Volver al panel de sorteo</a></div>
             </div>
+            <div class="text-end">
+                <a href="/admin/" class="btn btn-outline-light btn-sm"><i class="fas fa-arrow-left"></i> Volver al admin</a>
+            </div>
         </div>
 
         <div class="panel-card">

@@ -140,6 +140,7 @@
                 <div class="pool-meta">Año {{ raffle.year }} · <a href="{% url 'raffles:winners_list' raffle.id %}" class="nav-link-custom">Ver ganadores actuales</a> · <a href="/admin/raffles/raffle/{{ raffle.id }}/change/" class="nav-link-custom">Editar premios en admin</a></div>
             </div>
             <div class="text-end">
+                <a href="/admin/" class="btn btn-outline-light btn-sm me-1"><i class="fas fa-arrow-left"></i> Volver al admin</a>
                 <a href="{{ force_refresh_url }}" class="btn btn-outline-light btn-sm"><i class="fas fa-sync"></i> Refrescar verificación de pagos</a>
             </div>
         </div>
